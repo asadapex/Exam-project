@@ -40,3 +40,5 @@ const User = db.define("Users", {
     allowNull: false,
   },
 });
+
+module.exports = User;

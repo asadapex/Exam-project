@@ -1,13 +1,13 @@
 const { DataTypes } = require("sequelize");
 const { db } = require("../config/db");
 
-const User = db.define("Users", {
+const User = db.define("Userlar", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
-  email: {
+  name: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -15,24 +15,20 @@ const User = db.define("Users", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  fullname: {
-    type: DataTypes.STRING,
+  region_id: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   role: {
     type: DataTypes.STRING,
-    allowNull: false,
-  },
-  status: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  year: {
-    type: DataTypes.INTEGER,
     allowNull: false,
   },
   image: {

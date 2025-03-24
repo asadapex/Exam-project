@@ -239,7 +239,12 @@ router.post("/register", async (req, res) => {
     });
     console.log(otp);
     // const err = await sendSMS(phone, otp);
-    // if (err) return res.status(400).send({ message: "Error to send SMS code" });
+    // if (err)
+    //   return res
+    //     .status(400)
+    //     .send({
+    //       message: "Error to send SMS code please enter a valid phone number",
+    //     });
     sendEmail(email, name, otp);
 
     logger.log("info", `New user registered - ${email}`);
@@ -261,9 +266,11 @@ router.post("/verify", async (req, res) => {
     if (!match) {
       return res.status(400).send({ message: "Code is not valid or expired" });
     }
+
     await user.update({
       status: "active",
     });
+
     logger.log("info", `User verified - ${user}`);
     res.send({ message: "Verified" });
   } catch (error) {
@@ -289,6 +296,7 @@ router.post("/login", async (req, res) => {
     }
     const access_token = genToken(user);
     const refresh_token = genRefreshToken(user.email);
+
     logger.log("info", `User logged in - ${user}`);
     res.send({ refresh_token, access_token });
   } catch (error) {

@@ -273,6 +273,7 @@ const { authMiddleware } = require("../middlewares/auth-role.middlewars");
 const sendSMS = require("../config/eskiz");
 const Session = require("../models/session");
 const DeviceDetector = require("device-detector-js");
+const resetPasswordValidator = require("../validators/reset-password.validator");
 const deviceDetector = new DeviceDetector();
 
 const router = require("express").Router();
@@ -423,6 +424,10 @@ router.post("/access-token", async (req, res) => {
 
 router.patch("/reset-password", authMiddleware, async (req, res) => {
   try {
+    const { error } = resetPasswordValidator.validate(req.body);
+    if (error) {
+      return res.status(400).send({ message: error.details[0].message });
+    }
     const { oldPassword, newPassword } = req.body;
     const user = await User.findByPk(req.user.id);
     if (!user) {

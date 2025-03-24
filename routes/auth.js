@@ -203,6 +203,10 @@ const logger = require("../logger");
 const sendEmail = require("../config/sendEmail");
 const { authMiddleware } = require("../middlewares/auth-role.middlewars");
 const sendSMS = require("../config/eskiz");
+const Session = require("../models/session");
+const DeviceDetector = require("device-detector-js");
+const { log } = require("winston");
+const deviceDetector = new DeviceDetector();
 
 const router = require("express").Router();
 
@@ -298,6 +302,29 @@ router.post("/login", async (req, res) => {
     const refresh_token = genRefreshToken(user.email);
 
     logger.log("info", `User logged in - ${user}`);
+
+    const device = deviceDetector.parse(req.headers["user-agent"]);
+    console.log(device);
+
+    const session = await Session.findOne({
+      where: { user_id: user.id, ip: req.ip },
+    });
+    if (!session) {
+      await Session.create({
+        user_id: user.id,
+        ip: req.ip,
+        device:
+          device.os.name +
+          " " +
+          device.os.version +
+          " " +
+          device.device.type +
+          " " +
+          device.device.name +
+          " " +
+          device.device.brand,
+      });
+    }
     res.send({ refresh_token, access_token });
   } catch (error) {
     console.log(error);

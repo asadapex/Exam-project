@@ -173,6 +173,8 @@ router.get("/byId/:id", async (req, res) => {
     } catch (error) {
         console.log(error);
         loger.log("error", "error in get region by id");
+        res.status(500).send({message: "Error"})
+
     }
 });
 
@@ -230,6 +232,8 @@ router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) 
     } catch (error) {
         console.log(error);
         loger.log("error", "error in updated region by id");
+        res.status(500).send({message: "Error"})
+
     }
 });
 
@@ -276,6 +280,7 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
     } catch (error) {
         console.log(error);
         loger.log("error", "error in deleted region by id");
+        res.status(500).send({message: "Error"})
     }
 });
 

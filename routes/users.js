@@ -233,7 +233,7 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
     if (nameSort) {
       order.push(["name", nameSort === "asc" ? "ASC" : "DESC"]);
     }
-
+    const totalCount = await User.count({ where: whereClause });
     const all = await User.findAll({
       where: whereClause,
       limit,
@@ -241,8 +241,17 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
       order,
     });
 
+    const totalPages = Math.ceil(totalCount / limit);
+    const currentPage = offset / limit + 1;
+
     logger.info("Admin fetched all users");
-    res.send(all);
+    res.send({
+      data: all,
+      totalCount,
+      totalPages,
+      currentPage,
+      limit,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Error in getting users" });
@@ -256,18 +265,27 @@ router.get("/byregion/:id", roleMiddleware(["admin"]), async (req, res) => {
     limit = parseInt(limit) || 10;
     offset = (parseInt(offset) - 1) * limit || 0;
 
+    const totalCount = await User.count();
+
     const users = await User.findAll({
       where: { region_id: req.params.id },
       limit,
       offset,
     });
-
+    const totalPages = Math.ceil(totalCount / limit);
+    const currentPage = offset / limit + 1;
     if (!users.length) {
       return res.status(404).send({ message: "Users not found" });
     }
 
     logger.info("Admin fetched users by region", { regionId: req.params.id });
-    res.send(users);
+    res.send({
+      data: users,
+      totalCount,
+      totalPages,
+      currentPage,
+      limit,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Error in getting users by region" });

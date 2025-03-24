@@ -203,6 +203,10 @@ const logger = require("../logger");
 const sendEmail = require("../config/sendEmail");
 const { authMiddleware } = require("../middlewares/auth-role.middlewars");
 const sendSMS = require("../config/eskiz");
+const Session = require("../models/session");
+const DeviceDetector = require("device-detector-js");
+const { log } = require("winston");
+const deviceDetector = new DeviceDetector();
 
 const router = require("express").Router();
 
@@ -239,7 +243,12 @@ router.post("/register", async (req, res) => {
     });
     console.log(otp);
     // const err = await sendSMS(phone, otp);
-    // if (err) return res.status(400).send({ message: "Error to send SMS code" });
+    // if (err)
+    //   return res
+    //     .status(400)
+    //     .send({
+    //       message: "Error to send SMS code please enter a valid phone number",
+    //     });
     sendEmail(email, name, otp);
 
     logger.log("info", `New user registered - ${email}`);
@@ -261,9 +270,11 @@ router.post("/verify", async (req, res) => {
     if (!match) {
       return res.status(400).send({ message: "Code is not valid or expired" });
     }
+
     await user.update({
       status: "active",
     });
+
     logger.log("info", `User verified - ${user}`);
     res.send({ message: "Verified" });
   } catch (error) {
@@ -289,7 +300,31 @@ router.post("/login", async (req, res) => {
     }
     const access_token = genToken(user);
     const refresh_token = genRefreshToken(user.email);
+
     logger.log("info", `User logged in - ${user}`);
+
+    const device = deviceDetector.parse(req.headers["user-agent"]);
+    console.log(device);
+
+    const session = await Session.findOne({
+      where: { user_id: user.id, ip: req.ip },
+    });
+    if (!session) {
+      await Session.create({
+        user_id: user.id,
+        ip: req.ip,
+        device:
+          device.os.name +
+          " " +
+          device.os.version +
+          " " +
+          device.device.type +
+          " " +
+          device.device.name +
+          " " +
+          device.device.brand,
+      });
+    }
     res.send({ refresh_token, access_token });
   } catch (error) {
     console.log(error);

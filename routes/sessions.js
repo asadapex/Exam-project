@@ -61,7 +61,7 @@
  *       500:
  *         description: Internal server error
  */
-const authMiddleware = require("../middlewares/auth-role.middlewars");
+const { authMiddleware } = require("../middlewares/auth-role.middlewars");
 const logger = require("../logger");
 const Session = require("../models/session");
 

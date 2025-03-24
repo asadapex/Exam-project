@@ -25,8 +25,6 @@ function authMiddleware(req, res, next) {
   }
 }
 
-module.exports = authMiddleware;
-
 function roleMiddleware(roles) {
   return (req, res, next) => {
     try {

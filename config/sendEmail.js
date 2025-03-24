@@ -9,7 +9,7 @@ const taransporter = nodemailer.createTransport({
 });
 
 totp.options = {
-  step: 60,
+  step: 120,
   digits: 5,
 };
 

@@ -103,18 +103,33 @@
  *             properties:
  *               name:
  *                 type: string
+ *                 example: John Doe
  *               email:
  *                 type: string
+ *                 example: johndoe@gmail.com
  *               phone:
  *                 type: string
+ *                 example: +998901234567
  *               password:
  *                 type: string
+ *                 example: password123
  *               region_id:
  *                 type: integer
+ *                 example: 1
+ *               role:
+ *                 type: string
+ *                 example: user
+ *               image:
+ *                 type: string
+ *                 example: image
  *             required:
  *               - name
  *               - email
  *               - password
+ *               - phone
+ *               - region_id
+ *               - role
+ *               - image
  *     responses:
  *       201:
  *         description: User created successfully
@@ -260,7 +275,7 @@ router.get("/byregion/:id", roleMiddleware(["admin"]), async (req, res) => {
   }
 });
 
-router.post("/", roleMiddleware(["admin"]), async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { error } = userValidator.validate(req.body);
     if (error) {

@@ -186,7 +186,7 @@ const {
   authMiddleware,
   roleMiddleware,
 } = require("../middlewares/auth-role.middlewars");
-const courseRegistration = require("../models/courseRegistration");
+const { courseRegistration, User, Branch } = require("../associations");
 const {
   courseRegistrationValidator,
   courseRegistrationValidatorPatch,
@@ -206,12 +206,19 @@ router.get("/my-registrations", authMiddleware, async (req, res) => {
     if (branch_id) {
       whereCondition.branch_id = branch_id;
     }
-    const totalCount = await User.count({ where: whereCondition });
+    const totalCount = await courseRegistration.count({
+      where: whereCondition,
+    });
 
     const registrations = await courseRegistration.findAll({
       where: whereCondition,
       limit,
       offset,
+      include: [
+        { model: User, attributes: ["name", "email"] },
+        { model: EduCenter, attributes: ["name"] },
+        { model: Branch, attributes: ["name"] },
+      ],
     });
 
     const totalPages = Math.ceil(totalCount / limit);
@@ -254,7 +261,9 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
     if (branch_id) {
       whereCondition.branch_id = branch_id;
     }
-    const totalCount = await User.count({ where: whereCondition });
+    const totalCount = await courseRegistration.count({
+      where: whereCondition,
+    });
 
     const registrations = await courseRegistration.findAll({
       where: whereCondition,

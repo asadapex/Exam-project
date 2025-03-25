@@ -1,11 +1,11 @@
 const { DataTypes } = require("sequelize");
 const { db } = require("../config/db");
 
-const Region = db.define("Region", {
+const Category = db.define("Category", {
   id: {
     type: DataTypes.INTEGER,
-    autoIncrement: true,
     primaryKey: true,
+    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING,
@@ -13,4 +13,4 @@ const Region = db.define("Region", {
   },
 });
 
-module.exports = Region;
+module.exports = Category;

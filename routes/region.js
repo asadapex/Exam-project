@@ -162,7 +162,7 @@ router.get("/byId/:id", async (req, res) => {
     try {
         const bazaRegion = await Region.findByPk(id);
         console.log(bazaRegion);
-        
+
         if (!bazaRegion) {
             loger.log("info", "region get by id: region not found");
             return res.status(404).send({ message: "Region not found" });
@@ -173,8 +173,7 @@ router.get("/byId/:id", async (req, res) => {
     } catch (error) {
         console.log(error);
         loger.log("error", "error in get region by id");
-        res.status(500).send({message: "Error"})
-
+        res.status(500).send({ message: "Error" });
     }
 });
 
@@ -212,30 +211,36 @@ router.get("/byId/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) => {
-    const { id } = req.params;
-    const { name } = req.body;
-    try {
-        const bazaRegion = await Region.findByPk(id);
-        const oldName = bazaRegion;
-        
-        if (!bazaRegion) {
-            loger.log("info", "region updated: region not found");
-            return res.status(404).send({ message: "Region not found" });
+router.patch(
+    "/:id",
+    roleMiddleware(["admin", "super-admin"]),
+    async (req, res) => {
+        const { id } = req.params;
+        const { name } = req.body;
+        try {
+            const bazaRegion = await Region.findByPk(id);
+            const oldName = bazaRegion;
+
+            if (!bazaRegion) {
+                loger.log("info", "region updated: region not found");
+                return res.status(404).send({ message: "Region not found" });
+            }
+
+            await bazaRegion.update({ name: name });
+            console.log(bazaRegion);
+
+            loger.log(
+                "info",
+                `region updated\n\nOld name: ${oldName.name}\n\nNew name ${bazaRegion.name}`
+            );
+            res.status(200).send(bazaRegion);
+        } catch (error) {
+            console.log(error);
+            loger.log("error", "error in updated region by id");
+            res.status(500).send({ message: "Error" });
         }
-
-        await bazaRegion.update({ name: name });
-        console.log(bazaRegion);
-
-        loger.log("info", `region updated\n\nOld name: ${oldName.name}\n\nNew name ${bazaRegion.name}`);
-        res.status(200).send(bazaRegion);
-    } catch (error) {
-        console.log(error);
-        loger.log("error", "error in updated region by id");
-        res.status(500).send({message: "Error"})
-
     }
-});
+);
 
 /**
  * @swagger
@@ -267,7 +272,7 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
         const bazaRegion = await Region.findByPk(id);
 
         const regName = bazaRegion.name;
-        
+
         if (!bazaRegion) {
             loger.log("info", `${id} - id region not found !`);
             return res.status(404).send({ message: "Region not found" });
@@ -280,8 +285,10 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
     } catch (error) {
         console.log(error);
         loger.log("error", "error in deleted region by id");
-        res.status(500).send({message: "Error"})
+        res.status(500).send({ message: "Error" });
     }
 });
+
+//filter qilish kerak regioni namesi boyicha olish kerak
 
 module.exports = router;

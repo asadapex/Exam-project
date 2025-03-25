@@ -166,6 +166,74 @@
 
 /**
  * @swagger
+ * /auth/reset-password:
+ *   patch:
+ *     summary: Reset user password
+ *     description: Allows authenticated users to reset their password by providing the old password and a new one.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - oldPassword
+ *               - newPassword
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *                 description: The current password of the user.
+ *                 example: "oldpassword123"
+ *               newPassword:
+ *                 type: string
+ *                 description: The new password to be set.
+ *                 example: "newpassword123"
+ *     responses:
+ *       200:
+ *         description: Password successfully reset.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Password successfully reset"
+ *       401:
+ *         description: Unauthorized - Invalid old password or missing token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Old password is incorrect"
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Something went wrong"
+ */
+
+/**
+ * @swagger
  * /auth/me:
  *   get:
  *     summary: Get authenticated user information
@@ -205,7 +273,7 @@ const { authMiddleware } = require("../middlewares/auth-role.middlewars");
 const sendSMS = require("../config/eskiz");
 const Session = require("../models/session");
 const DeviceDetector = require("device-detector-js");
-const { log } = require("winston");
+const resetPasswordValidator = require("../validators/reset-password.validator");
 const deviceDetector = new DeviceDetector();
 
 const router = require("express").Router();
@@ -255,6 +323,7 @@ router.post("/register", async (req, res) => {
     res.send({ message: "Otp sended to your email" });
   } catch (error) {
     console.log(error);
+    logger.error("Error to register user");
     res.status(500).send({ message: "Something went wrong" });
   }
 });
@@ -279,6 +348,8 @@ router.post("/verify", async (req, res) => {
     res.send({ message: "Verified" });
   } catch (error) {
     console.log(error);
+    logger.error("Error to verify user");
+    res.status(500).send({ message: "Something went wrong" });
   }
 });
 
@@ -328,6 +399,8 @@ router.post("/login", async (req, res) => {
     res.send({ refresh_token, access_token });
   } catch (error) {
     console.log(error);
+    logger.error("Error to log in");
+    res.status(500).send({ message: "Something went wrong" });
   }
 });
 
@@ -344,6 +417,33 @@ router.post("/access-token", async (req, res) => {
     res.send({ access_token });
   } catch (error) {
     console.log(error);
+    logger.error("Error to get new access_token");
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
+router.patch("/reset-password", authMiddleware, async (req, res) => {
+  try {
+    const { error } = resetPasswordValidator.validate(req.body);
+    if (error) {
+      return res.status(400).send({ message: error.details[0].message });
+    }
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    const match = bcrypt.compareSync(oldPassword, user.password);
+    if (!match) {
+      return res.status(401).send({ message: "Old password is incorrect" });
+    }
+    const hash = bcrypt.hashSync(newPassword, 10);
+    await user.update({ password: hash });
+    res.send({ message: "Password successfully reset" });
+  } catch (error) {
+    console.log(error);
+    logger.error("Error to reset user's password:");
+    res.status(500).send({ message: "Something went wrong" });
   }
 });
 

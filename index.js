@@ -6,6 +6,7 @@ const userRoutes = require("./routes/users");
 const sessionRoutes = require("./routes/sessions");
 const registrationRoutes = require("./routes/courseRegistration");
 const uploadRoutes = require("./routes/upload");
+const categoryRoutes = require("./routes/category");
 const setupSwagger = require("./swagger");
 const app = express();
 connectDb();
@@ -17,6 +18,7 @@ app.use("/region", regionRoutes);
 app.use("/users", userRoutes);
 app.use("/registration", registrationRoutes);
 app.use("/upload", uploadRoutes);
+app.use("/categories", categoryRoutes);
 app.use(sessionRoutes);
 setupSwagger(app);
 

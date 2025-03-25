@@ -7,6 +7,62 @@
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - id
+ *         - email
+ *         - name
+ *         - phone
+ *         - region_id
+ *         - role
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         name:
+ *           type: string
+ *           description: User's full name
+ *           example: John Doe
+ *         phone:
+ *           type: string
+ *           description: User's phone number
+ *           example: +998901234567
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: User's email address
+ *           example: johndoe@gmail.com
+ *         region_id:
+ *           type: integer
+ *           description: User's region ID
+ *           example: 1
+ *         role:
+ *           type: string
+ *           description: User's role
+ *           example: user
+ *         status:
+ *           type: string
+ *           description: Account status
+ *           example: active
+ *         image:
+ *           type: string
+ *           description: User's profile image URL
+ *           example: https://example.com/profile.jpg
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2024-03-24T12:00:00Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2024-03-24T12:30:00Z"
+ */
+
+/**
+ * @swagger
  * /auth/register:
  *   post:
  *     summary: Register a new user

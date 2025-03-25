@@ -2,7 +2,7 @@ const { Router } = require("express");
 const loger = require("../logger");
 const Fileds = require("../models/fileds");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
-const { validateFileds } = require("../validators/fileds.validator");
+const { validateFileds } = require("../validators/fields.validator");
 
 const router = Router();
 
@@ -31,7 +31,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/", async (req, res) => {
+router.post("/", roleMiddleware(["admin"]), async (req, res) => {
     try {
         const { error, value } = validateFileds(req.body);
         if (error) {
@@ -131,7 +131,7 @@ router.get("/", async (req, res) => {
 });
 /**
  * @swagger
- * /fields:
+ * /fields/sort:
  *   get:
  *     summary: Get all fields with pagination and sorting
  *     tags:
@@ -181,7 +181,7 @@ router.get("/", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get("/", async (req, res) => {
+router.get("/sort", async (req, res) => {
     try {
         const { page = 1, limit = 10, sort = "asc" } = req.query;
 
@@ -240,7 +240,7 @@ router.get("/", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
     try {
@@ -281,7 +281,7 @@ router.patch("/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", roleMiddleware(["admin"]) ,async (req, res) => {
     const { id } = req.params;
     try {
         const field = await Fileds.findByPk(id);

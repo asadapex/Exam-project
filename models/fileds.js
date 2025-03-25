@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const { db } = require("../config/db");
 
-const Subjet = db.define("Subject", {
+const Fileds = db.define("Fields", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -17,4 +17,4 @@ const Subjet = db.define("Subject", {
     },
 });
 
-module.exports = Subjet;
+module.exports = Fileds;

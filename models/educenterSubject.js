@@ -1,20 +1,19 @@
-const { DataTypes } = require("sequelize");
 const { db } = require("../config/db");
 
-const Fields = db.define("Fields", {
+const EduCenter_Subject = db.define("EduCenter_Subject", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
-  name: {
-    type: DataTypes.STRING,
+  edu_id: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
-  image: {
-    type: DataTypes.STRING,
+  subject_id: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
 });
 
-module.exports = Fields;
+module.exports = EduCenter_Subject;

@@ -5,7 +5,7 @@ const Subjet = db.define("Subject", {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: false,
+        primaryKey: true,
     },
     name: {
         type: DataTypes.STRING,

@@ -8,6 +8,7 @@ const registrationRoutes = require("./routes/courseRegistration");
 const filedRoutes = require("./routes/fileds")
 const uploadRoutes = require("./routes/upload");
 const categoryRoutes = require("./routes/category");
+const EduCenterRoutes = require("./routes/eduCenter")
 const cors = require("cors");
 const setupSwagger = require("./swagger");
 const app = express();
@@ -31,6 +32,7 @@ app.use("/registration", registrationRoutes);
 app.use("/fields", filedRoutes)
 app.use("/upload", uploadRoutes);
 app.use("/categories", categoryRoutes);
+app.use("/eduCenter", EduCenterRoutes)
 app.use(sessionRoutes);
 setupSwagger(app);
 

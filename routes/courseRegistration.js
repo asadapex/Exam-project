@@ -206,7 +206,9 @@ router.get("/my-registrations", authMiddleware, async (req, res) => {
     if (branch_id) {
       whereCondition.branch_id = branch_id;
     }
-    const totalCount = await User.count({ where: whereCondition });
+    const totalCount = await courseRegistration.count({
+      where: whereCondition,
+    });
 
     const registrations = await courseRegistration.findAll({
       where: whereCondition,
@@ -254,7 +256,9 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
     if (branch_id) {
       whereCondition.branch_id = branch_id;
     }
-    const totalCount = await User.count({ where: whereCondition });
+    const totalCount = await courseRegistration.count({
+      where: whereCondition,
+    });
 
     const registrations = await courseRegistration.findAll({
       where: whereCondition,

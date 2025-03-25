@@ -1,16 +1,20 @@
 const { DataTypes } = require("sequelize");
 const { db } = require("../config/db");
 
-const Region = db.define("Region", {
+const Fields = db.define("Fields", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
-    primaryKey: true,
+    primaryKey: false,
   },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  image: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
 });
 
-module.exports = Region;
+module.exports = Fields;

@@ -203,7 +203,7 @@ const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
 const bcrypt = require("bcrypt");
 const userValidator = require("../validators/user.validator");
 const { Op } = require("sequelize");
-const User = require("../models/user");
+const { Region, User } = require("../associations");
 
 router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
   try {
@@ -239,6 +239,7 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
       limit,
       offset,
       order,
+      include: { model: Region, attributes: ["name"] },
     });
 
     const totalPages = Math.ceil(totalCount / limit);
@@ -285,6 +286,7 @@ router.get("/byregion/:id", roleMiddleware(["admin"]), async (req, res) => {
       totalPages,
       currentPage,
       limit,
+      include: { model: Region, attributes: ["name"] },
     });
   } catch (error) {
     console.error(error);

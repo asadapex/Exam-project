@@ -186,7 +186,7 @@ const {
   authMiddleware,
   roleMiddleware,
 } = require("../middlewares/auth-role.middlewars");
-const courseRegistration = require("../models/courseRegistration");
+const { courseRegistration, User, Branch } = require("../associations");
 const {
   courseRegistrationValidator,
   courseRegistrationValidatorPatch,
@@ -214,6 +214,11 @@ router.get("/my-registrations", authMiddleware, async (req, res) => {
       where: whereCondition,
       limit,
       offset,
+      include: [
+        { model: User, attributes: ["name", "email"] },
+        { model: EduCenter, attributes: ["name"] },
+        { model: Branch, attributes: ["name"] },
+      ],
     });
 
     const totalPages = Math.ceil(totalCount / limit);

@@ -289,6 +289,53 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
     }
 });
 
-//filter qilish kerak regioni namesi boyicha olish kerak
+
+/**
+ * @swagger
+ * /region/{name}:
+ *   post:
+ *     summary: Get a region by its name
+ *     tags:
+ *       - Regions
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Name of the region
+ *     responses:
+ *       200:
+ *         description: Region details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *       404:
+ *         description: Region not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/:name", async (req, res) => {
+    const { name } = req.params;
+    try {
+        const bazaRegion = await Region.findOne({ where: { name: name } });
+        if (!bazaRegion) {
+            loger.log("info", `${name} this name region not found`);
+            return res.status(404).send({ message: "Region not found" });
+        }
+        loger.log("info", `${name} Region get`);
+        res.send(bazaRegion);
+    } catch (error) {
+        console.log(error);
+        loger.log("error", "Error in get region by name");
+        res.status(500).send({ message: "Error" });
+    }
+});
 
 module.exports = router;

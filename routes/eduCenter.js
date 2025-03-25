@@ -46,7 +46,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/", roleMiddleware(["admin"]), async (req, res) => {
+router.post("/", roleMiddleware(["ceo"]), async (req, res) => {
     try {
         const { error, value } = validEdu(req.body);
         if (error) {
@@ -286,7 +286,7 @@ router.get("/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
+router.patch("/:id", roleMiddleware(["ceo"]), async (req, res) => {
     const { id } = req.params;
     try {
         const { error, value } = validEdu(req.body);
@@ -333,7 +333,7 @@ router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
+router.delete("/:id", roleMiddleware(["ceo"]), async (req, res) => {
     const { id } = req.params;
     try {
         const eduCenter = await EduCenter.findByPk(id);
@@ -352,7 +352,6 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
     }
 });
 
-EduCenter.belongsTo(Region, { as: "region", foreignKey: "region_id" });
-EduCenter.belongsTo(User, { as: "user", foreignKey: "user_id" });
+
 module.exports = router;
 

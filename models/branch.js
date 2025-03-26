@@ -19,11 +19,19 @@ const Branch = db.define("Branch", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  address: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   region_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
   edu_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },

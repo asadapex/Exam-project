@@ -204,7 +204,8 @@ router.get("/", async (req, res) => {
                 // {
                 //     model: Comment,
                 //     as: "all coments",
-                // }l
+                // }
+                
             ],
         });
 

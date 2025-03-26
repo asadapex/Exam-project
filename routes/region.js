@@ -1,11 +1,17 @@
-const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
-const Region = require("../models/region");
-const logger = require("../logger");
-const { validateRegion } = require("../validators/region.validator");
 const { Router } = require("express");
-
+const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
+const logger = require("../logger");
+const Region = require("../models/region");
+const { validateRegion } = require("../validators/region.validator");
+const { Op } = require("sequelize");
 const router = Router();
 
+/**
+ * Utility function to handle errors
+ * @param {Response} res - Express response object
+ * @param {Error} error - Error object
+ * @param {string} message - Custom error message
+ */
 const handleError = (res, error, message) => {
     console.error(error);
     logger.log("error", message);
@@ -45,11 +51,12 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
 
         if (error) {
             logger.log("error", "Validation error in region creation");
-            return res.status(400).send({ message: "Error in validation region" });
+            return res.status(400).send({ message: "Validation error: " + error.details[0].message });
         }
 
         const existingRegion = await Region.findOne({ where: { name: value.name } });
         if (existingRegion) {
+            logger.log("info", "Region already exists");
             return res.status(400).send({ message: "Region already exists" });
         }
 
@@ -60,12 +67,11 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
         handleError(res, error, "Error creating region");
     }
 });
-
 /**
  * @swagger
  * /region:
  *   get:
- *     summary: Get all regions with pagination
+ *     summary: Get all regions with pagination and optional name filter
  *     tags:
  *       - Regions
  *     parameters:
@@ -79,6 +85,11 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
  *         schema:
  *           type: integer
  *         description: Number of items per page
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Filter regions by name
  *     responses:
  *       200:
  *         description: A list of regions
@@ -89,13 +100,15 @@ router.get("/", async (req, res) => {
     try {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
+        const name = req.query.name || "";
 
         const regions = await Region.findAndCountAll({
+            where: name ? { name: { [Op.like]: `%${name}%` } } : undefined,
             offset: (page - 1) * limit,
             limit,
         });
 
-        logger.log("info", "Regions fetched with pagination");
+        logger.log("info", "Regions fetched with pagination and optional name filter");
         res.status(200).send({
             totalItems: regions.count,
             totalPages: Math.ceil(regions.count / limit),
@@ -106,7 +119,6 @@ router.get("/", async (req, res) => {
         handleError(res, error, "Error fetching regions");
     }
 });
-
 /**
  * @swagger
  * /region/byId/{id}:
@@ -180,9 +192,16 @@ router.get("/byId/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) => {
+router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
     try {
         const { id } = req.params;
+        const { error, value } = validateRegion(req.body);
+
+        if (error) {
+            logger.log("error", "Validation error in region update");
+            return res.status(400).send({ message: "Validation error: " + error.details[0].message });
+        }
+
         const region = await Region.findByPk(id);
 
         if (!region) {
@@ -190,61 +209,11 @@ router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) 
             return res.status(404).send({ message: "Region not found" });
         }
 
-        const { error, value } = validateRegion(req.body);
-        if (error) {
-            logger.log("error", "Validation failed for region update");
-            return res.status(400).send({ message: "Validation failed" });
-        }
-
-        const oldName = region.name;
         await region.update(value);
-
-        logger.log(
-            "info",
-            `Region updated: Old name: ${oldName}, New name: ${region.name}`
-        );
+        logger.log("info", `Region updated successfully: ${id}`);
         res.status(200).send(region);
     } catch (error) {
-        handleError(res, error, "Error updating region by ID");
-    }
-});
-
-/**
- * @swagger
- * /region/{name}:
- *   post:
- *     summary: Get a region by its name
- *     tags:
- *       - Regions
- *     parameters:
- *       - in: path
- *         name: name
- *         required: true
- *         schema:
- *           type: string
- *         description: Name of the region
- *     responses:
- *       200:
- *         description: Region details
- *       404:
- *         description: Region not found
- *       500:
- *         description: Server error
- */
-router.post("/:name", async (req, res) => {
-    try {
-        const { name } = req.params;
-        const region = await Region.findOne({ where: { name } });
-
-        if (!region) {
-            logger.log("info", `Region not found with name: ${name}`);
-            return res.status(404).send({ message: "Region not found" });
-        }
-
-        logger.log("info", `Region fetched by name: ${name}`);
-        res.status(200).send(region);
-    } catch (error) {
-        handleError(res, error, "Error fetching region by name");
+        handleError(res, error, "Error updating region");
     }
 });
 
@@ -282,13 +251,11 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
             return res.status(404).send({ message: "Region not found" });
         }
 
-        const regionName = region.name;
         await region.destroy();
-
-        logger.log("info", `Region deleted: ${regionName}`);
-        res.status(200).send({ message: "Region deleted" });
+        logger.log("info", `Region deleted successfully: ${id}`);
+        res.status(200).send({ message: "Region deleted successfully" });
     } catch (error) {
-        handleError(res, error, "Error deleting region by ID");
+        handleError(res, error, "Error deleting region");
     }
 });
 

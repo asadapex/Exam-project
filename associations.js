@@ -194,6 +194,45 @@ Comment.belongsTo(Branch, {
   onUpdate: "CASCADE",
 });
 
+
+EduCenter.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+User.hasMany(EduCenter, {
+  foreignKey: "user_id",
+  as: "eduCenters",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+EduCenter.belongsTo(Region, {
+  foreignKey: "region_id",
+  as: "region", 
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+Region.hasMany(EduCenter, {
+  foreignKey: "region_id",
+  as: "eduCenters",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+
+EduCenter.hasMany(Comment, {
+  foreignKey: "edu_id",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+Comment.belongsTo(EduCenter, {
+  foreignKey: "edu_id",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
 module.exports = {
   courseRegistration,
   Fields,

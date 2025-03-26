@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const loger = require("../logger");
-const {Op} = require("sequelize")
+const { Op } = require("sequelize");
 const router = Router();
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
 const { validateSubject } = require("../validators/subject.validator");
@@ -50,6 +50,9 @@ const Subject = require("../models/subject");
 router.post("/", roleMiddleware(["admin"]), async (req, res) => {
     try {
         const { error, value } = validateSubject(req.body);
+        const { subjects } = req.body;
+        console.log(subjects);
+
         if (error) {
             loger.log("info", `Validation error: ${error.message}`);
             return res.status(400).send({ message: error.message });
@@ -132,7 +135,10 @@ router.get("/", async (req, res) => {
             order: [["name", sort]],
         });
 
-        loger.log("info", "Get all subjects with pagination, sorting, and filtering");
+        loger.log(
+            "info",
+            "Get all subjects with pagination, sorting, and filtering"
+        );
         res.send({
             total: allSubjects.count,
             page: parseInt(page),

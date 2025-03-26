@@ -272,7 +272,13 @@ router.post("/", authMiddleware, async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
+    const bazaBranch = await Branch.findByPk(req.body.branch_id)
+    if(!bazaBranch){
+      return res.status(404).send({message: "Branch not found !"})
+    }
+    
     const comment = await Comment.create({ ...req.body, user_id: req.user.id });
+    
     res.send(comment);
   } catch (error) {
     console.log(error);

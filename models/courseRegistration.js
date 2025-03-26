@@ -7,10 +7,6 @@ const courseRegistration = db.define("courseRegistration", {
     autoIncrement: true,
     primaryKey: true,
   },
-  edu_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
   branch_id: {
     type: DataTypes.INTEGER,
     allowNull: false,

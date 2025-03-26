@@ -257,8 +257,7 @@ router.get("/all", authMiddleware, async (req, res) => {
       include: [
         { model: Region, attributes: ["name"] },
         { model: EduCenter, attributes: ["name"] },
-        { model: User, attributes: ["name"] },
-        { model: Comment },
+        { model: User, as: "user", attributes: ["name"] },
       ],
     });
 
@@ -273,6 +272,7 @@ router.get("/all", authMiddleware, async (req, res) => {
       limit,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).send({ error: "Error-500: Server error" });
   }
 });
@@ -283,8 +283,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
       include: [
         { model: Region, attributes: ["name"] },
         { model: EduCenter, attributes: ["name"] },
-        { model: User, attributes: ["name"] },
-        { model: Comment },
+        { model: User, as: "user", attributes: ["name"] },
       ],
     });
 
@@ -303,18 +302,16 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    
 
-    const bazaRegion = await Region.findByPk(req.body.region_id)
-    if(!bazaRegion){
-      return res.status(404).send({message: "Not found region"})
+    const bazaRegion = await Region.findByPk(req.body.region_id);
+    if (!bazaRegion) {
+      return res.status(404).send({ message: "Not found region" });
     }
 
-    const bazaEdu = await EduCenter.findByPk(req.body.edu_id)
-    if(!bazaEdu){
-      return res.status(404).send({message: "Not found Education"})
+    const bazaEdu = await EduCenter.findByPk(req.body.edu_id);
+    if (!bazaEdu) {
+      return res.status(404).send({ message: "Not found Education" });
     }
-
 
     const branch = await Branch.create({
       name: req.body.name,
@@ -323,9 +320,9 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
       region_id: req.body.region_id,
       edu_id: req.body.edu_id,
       address: req.body.address,
-      user_id: req.user.id
+      user_id: req.user.id,
     });
-    
+
     res.send(branch);
   } catch (error) {
     console.log(error);
@@ -335,10 +332,10 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
 
 router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
   try {
-    const bazaReg = await Region.findByPk(req.body.region_id)
-      if(!bazaReg){
-        return res.status(404).send({message: "Region not found"})
-      }
+    const bazaReg = await Region.findByPk(req.body.region_id);
+    if (!bazaReg) {
+      return res.status(404).send({ message: "Region not found" });
+    }
     if (req.user.role != "admin") {
       const one = await Branch.findOne({
         where: { id: req.params.id, user_id: req.user.id },

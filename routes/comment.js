@@ -7,6 +7,49 @@
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Comment:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: Unique identifier for the comment
+ *         text:
+ *           type: string
+ *           description: The content of the comment
+ *         edu_id:
+ *           type: integer
+ *           description: The branch ID where the comment is being made
+ *         star:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 5
+ *           description: Rating from 1 to 5
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when the comment was created
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Timestamp when the comment was last updated
+ *
+ *     CommentUpdateInput:
+ *       type: object
+ *       properties:
+ *         text:
+ *           type: string
+ *           description: Updated text of the comment
+ *         star:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 5
+ *           description: Updated rating from 1 to 5
+ */
+
+/**
+ * @swagger
  * /comments/all:
  *   get:
  *     summary: Get all comments
@@ -103,13 +146,13 @@
  *             type: object
  *             required:
  *               - text
- *               - branch_id
+ *               - edu_id
  *               - star
  *             properties:
  *               text:
  *                 type: string
  *                 description: The content of the comment
- *               branch_id:
+ *               edu_id:
  *                 type: integer
  *                 description: The branch ID where the comment is being made
  *               star:
@@ -190,7 +233,7 @@
  *         description: Server error
  */
 const express = require("express");
-const { Comment, Branch, User } = require("../associations");
+const { Comment, User, EduCenter } = require("../associations");
 const router = express.Router();
 const {
   roleMiddleware,
@@ -226,8 +269,8 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
       offset,
       order,
       include: [
-        { model: Branch, attributes: ["name"] },
-        { model: User, attributes: ["name"] },
+        { model: EduCenter, as: "eduCenter", attributes: ["name"] },
+        { model: User, as: "user", attributes: ["name"] },
       ],
     });
 
@@ -252,8 +295,8 @@ router.get("/:id", roleMiddleware(["admin"]), async (req, res) => {
   try {
     const comment = await Comment.findByPk(req.params.id, {
       include: [
-        { model: Branch, attributes: ["name"] },
-        { model: User, attributes: ["name"] },
+        { model: EduCenter, as: "eduCenter", attributes: ["name"] },
+        { model: User, as: "user", attributes: ["name"] },
       ],
     });
     if (!comment) {
@@ -272,13 +315,13 @@ router.post("/", authMiddleware, async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    const bazaBranch = await Branch.findByPk(req.body.branch_id)
-    if(!bazaBranch){
-      return res.status(404).send({message: "Branch not found !"})
+    const eduCenter = await EduCenter.findByPk(req.body.edu_id);
+    if (!eduCenter) {
+      return res.status(404).send({ message: "EduCenter not found !" });
     }
-    
+
     const comment = await Comment.create({ ...req.body, user_id: req.user.id });
-    
+
     res.send(comment);
   } catch (error) {
     console.log(error);

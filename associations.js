@@ -174,26 +174,16 @@ Like.belongsTo(Branch, {
 
 User.hasMany(Comment, {
   foreignKey: "user_id",
+  as: "comments",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
 Comment.belongsTo(User, {
   foreignKey: "user_id",
+  as: "user",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
-
-Branch.hasMany(Comment, {
-  foreignKey: "branch_id",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-Comment.belongsTo(Branch, {
-  foreignKey: "branch_id",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-
 
 EduCenter.belongsTo(User, {
   foreignKey: "user_id",
@@ -210,7 +200,7 @@ User.hasMany(EduCenter, {
 
 EduCenter.belongsTo(Region, {
   foreignKey: "region_id",
-  as: "region", 
+  as: "region",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
@@ -221,19 +211,45 @@ Region.hasMany(EduCenter, {
   onUpdate: "CASCADE",
 });
 
-Comment.belongsTo(EduCenter, {
-  foreignKey: "user_id",
-  as: "eduCenter",
+Branch.belongsTo(courseRegistration, {
+  foreignKey: "branch_id",
+  as: "branch",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+courseRegistration.hasMany(Branch, {
+  foreignKey: "branch_id",
+  as: "branch",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
 
+Comment.belongsTo(EduCenter, {
+  foreignKey: "edu_id",
+  as: "eduCenter",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 EduCenter.hasMany(Comment, {
-  foreignKey: "user_id",
+  foreignKey: "edu_id",
   as: "comments",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
+
+Branch.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+User.hasMany(Branch, {
+  foreignKey: "user_id",
+  as: "Branchs",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
 module.exports = {
   courseRegistration,
   Fields,

@@ -11,7 +11,7 @@ const Comments = db.define("Comments", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  branch_id: {
+  edu_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },

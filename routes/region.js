@@ -45,7 +45,7 @@ const handleError = (res, error, message) => {
  *       500:
  *         description: Server error
  */
-router.post("/", roleMiddleware(["admin"]), async (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const { error, value } = validateRegion(req.body);
 

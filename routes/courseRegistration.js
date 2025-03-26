@@ -186,7 +186,12 @@ const {
   authMiddleware,
   roleMiddleware,
 } = require("../middlewares/auth-role.middlewars");
-const { courseRegistration, User, Branch } = require("../associations");
+const {
+  courseRegistration,
+  User,
+  Branch,
+  EduCenter,
+} = require("../associations");
 const {
   courseRegistrationValidator,
   courseRegistrationValidatorPatch,
@@ -216,8 +221,7 @@ router.get("/my-registrations", authMiddleware, async (req, res) => {
       offset,
       include: [
         { model: User, attributes: ["name", "email"] },
-        { model: EduCenter, attributes: ["name"] },
-        { model: Branch, attributes: ["name"] },
+        { model: Branch, as: "branch", attributes: ["name"] },
       ],
     });
 
@@ -255,9 +259,6 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
 
     let whereCondition = {};
 
-    if (edu_id) {
-      whereCondition.edu_id = edu_id;
-    }
     if (branch_id) {
       whereCondition.branch_id = branch_id;
     }

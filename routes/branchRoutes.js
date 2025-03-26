@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /all:
+ * /branches/all:
  *   get:
  *     summary: Get all branches with optional filters
  *     tags: [Branches]
@@ -72,7 +72,7 @@
 
 /**
  * @swagger
- * /{id}:
+ * /branches/{id}:
  *   get:
  *     summary: Get a branch by ID
  *     tags: [Branches]
@@ -100,7 +100,7 @@
 
 /**
  * @swagger
- * /:
+ * /branches/:
  *   post:
  *     summary: Create a new branch
  *     tags: [Branches]
@@ -153,7 +153,7 @@
 
 /**
  * @swagger
- * /{id}:
+ * /branches/{id}:
  *   patch:
  *     summary: Update a branch by ID
  *     tags: [Branches]
@@ -189,7 +189,7 @@
 
 /**
  * @swagger
- * /{id}:
+ * /branches/{id}:
  *   delete:
  *     summary: Delete a branch by ID
  *     tags: [Branches]
@@ -257,6 +257,7 @@ router.get("/all", authMiddleware, async (req, res) => {
         { model: Region, attributes: ["name"] },
         { model: EduCenter, attributes: ["name"] },
         { model: User, attributes: ["name"] },
+        { model: Comment },
       ],
     });
 
@@ -277,7 +278,14 @@ router.get("/all", authMiddleware, async (req, res) => {
 
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const branch = await Branch.findByPk(req.params.id);
+    const branch = await Branch.findByPk(req.params.id, {
+      include: [
+        { model: Region, attributes: ["name"] },
+        { model: EduCenter, attributes: ["name"] },
+        { model: User, attributes: ["name"] },
+        { model: Comment },
+      ],
+    });
 
     if (!branch) {
       return res.status(404).send({ messge: "Branch not found" });
@@ -303,15 +311,23 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
 
 router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
   try {
-    const one = await Branch.findOne({
-      where: { id: req.params.id, user_id: req.user.id },
-    });
-    if (!one) {
-      return res.status(403).send({ message: "Forbidden" });
+    if (req.user.role != "admin") {
+      const one = await Branch.findOne({
+        where: { id: req.params.id, user_id: req.user.id },
+      });
+      if (!one) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
+      const { error } = branchUpdateValidation.validate(req.body);
+      if (error) {
+        return res.status(400).send({ message: error.details[0].message });
+      }
+      await one.update(req.body);
+      res.send(one);
     }
-    const { error } = branchUpdateValidation.validate(req.body);
-    if (error) {
-      return res.status(400).send({ message: error.details[0].message });
+    const one = await Branch.findByPk(req.params.id);
+    if (!one) {
+      return res.status(404).send({ message: "Not found" });
     }
     await one.update(req.body);
     res.send(one);
@@ -322,14 +338,22 @@ router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
 
 router.delete("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
   try {
-    const one = await Branch.findOne({
-      where: { id: req.params.id, user_id: req.user.id },
-    });
+    if (req.user.role != "admin") {
+      const one = await Branch.findOne({
+        where: { id: req.params.id, user_id: req.user.id },
+      });
+      if (!one) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
+      await one.destroy();
+      res.send({ message: "Branch deleted" });
+    }
+    const one = await Branch.findByPk(req.params.id);
     if (!one) {
-      return res.status(403).send({ message: "Forbidden" });
+      return res.status(404).send({ message: "Not found" });
     }
     await one.destroy();
-    res.send({ message: "Branch deleted" });
+    res.send(one.dataValues);
   } catch (error) {
     res.status(500).send({ message: "Something went wrong" });
   }

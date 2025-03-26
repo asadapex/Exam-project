@@ -355,6 +355,12 @@ router.post("/register", async (req, res) => {
       return res.status(400).send({ message: error.details[0].message });
 
     const { email, password, phone, name, ...rest } = req.body;
+    const user_email = await User.findOne({ where: { email } });
+    const user_phone = await User.findOne({ where: { phone } });
+
+    if (user_email || user_phone) {
+      return res.status(400).send({ message: "User already exists" });
+    }
     const otp = totp.generate(email + "apex");
     const hash = bcrypt.hashSync(password, 10);
     const newUser = await User.create({

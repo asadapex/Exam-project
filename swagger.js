@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:4000", // API server manzili
+        url: "http://asadapex.uz", // API server manzili
         description: "Local server",
       },
     ],

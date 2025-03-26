@@ -301,13 +301,18 @@ router.post("/", async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
+
     const { password, email, phone, ...rest } = req.body;
-    const user_email = await User.findOne({ where: { email: user_email } });
-    const user_phone = await User.findOne({ where: { phone: user_phone } });
-    if (user_email || user_phone) {
+
+    const existingUserByEmail = await User.findOne({ where: { email } });
+    const existingUserByPhone = await User.findOne({ where: { phone } });
+
+    if (existingUserByEmail || existingUserByPhone) {
       return res.status(400).send({ message: "User already exists" });
     }
+
     const hash = bcrypt.hashSync(password, 10);
+
     const newUser = await User.create({
       email,
       phone,

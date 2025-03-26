@@ -1,4 +1,5 @@
 const { db } = require("../config/db");
+const { DataTypes } = require("sequelize");
 
 const EduCenter_Field = db.define("EduCenter_Field", {
   id: {

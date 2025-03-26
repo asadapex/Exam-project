@@ -27,6 +27,10 @@ const EduCenter = db.define("EduCenetr", {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    image: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
 });
 
 module.exports = EduCenter;

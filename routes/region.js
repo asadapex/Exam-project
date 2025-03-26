@@ -67,11 +67,13 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
         handleError(res, error, "Error creating region");
     }
 });
+
+
 /**
  * @swagger
  * /region:
  *   get:
- *     summary: Get all regions with pagination and optional name filter
+ *     summary: Get all regions with pagination, optional name filter, and sorting
  *     tags:
  *       - Regions
  *     parameters:
@@ -90,25 +92,60 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
  *         schema:
  *           type: string
  *         description: Filter regions by name
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sorting order (asc for ascending, desc for descending)
  *     responses:
  *       200:
  *         description: A list of regions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalItems:
+ *                   type: integer
+ *                   description: Total number of regions
+ *                 totalPages:
+ *                   type: integer
+ *                   description: Total number of pages
+ *                 currentPage:
+ *                   type: integer
+ *                   description: Current page number
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: Region ID
+ *                       name:
+ *                         type: string
+ *                         description: Region name
  *       500:
  *         description: Error fetching regions
  */
+
 router.get("/", async (req, res) => {
     try {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         const name = req.query.name || "";
+        const sort = req.query.sort || "id"; 
+        const order = req.query.order === "desc" ? "DESC" : "ASC"; 
 
         const regions = await Region.findAndCountAll({
             where: name ? { name: { [Op.like]: `%${name}%` } } : undefined,
+            order: [[sort, order]], 
             offset: (page - 1) * limit,
             limit,
         });
 
-        logger.log("info", "Regions fetched with pagination and optional name filter");
+        logger.log("info", "Regions fetched with pagination, optional name filter, and sorting");
         res.status(200).send({
             totalItems: regions.count,
             totalPages: Math.ceil(regions.count / limit),

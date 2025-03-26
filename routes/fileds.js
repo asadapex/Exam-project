@@ -3,6 +3,7 @@ const loger = require("../logger");
 const Fileds = require("../models/fileds");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
 const { validateFileds } = require("../validators/fields.validator");
+const { Op } = require("sequelize");
 
 const router = Router();
 
@@ -23,6 +24,9 @@ const router = Router();
  *               name:
  *                 type: string
  *                 example: "New Field"
+ *               image:
+ *                 type: string
+ *                 example: "image.png"
  *     responses:
  *       200:
  *         description: Field created successfully
@@ -47,7 +51,7 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
         }
         const newField = await Fileds.create({
             name: value.name,
-            image: "img.png",
+            image: value.image || "No image",
         });
         loger.log("info", `New field created: ${value.name}`);
         res.status(200).send(newField);
@@ -62,7 +66,7 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
  * @swagger
  * /fields:
  *   get:
- *     summary: Get all fields with pagination
+ *     summary: Get all fields with pagination, sorting, and name filtering
  *     tags:
  *       - Fields
  *     parameters:
@@ -76,6 +80,17 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
  *         schema:
  *           type: integer
  *         description: Number of items per page
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort order (asc for ascending, desc for descending)
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Filter by name
  *     responses:
  *       200:
  *         description: A list of fields
@@ -106,95 +121,19 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
  */
 router.get("/", async (req, res) => {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const { page = 1, limit = 10, sort = "asc", name = "" } = req.query;
 
         const pageNumber = parseInt(page, 10);
         const limitNumber = parseInt(limit, 10);
 
         const fields = await Fileds.findAndCountAll({
+            where: name ? { name: { [Op.like]: `%${name}%` } } : undefined,
             offset: (pageNumber - 1) * limitNumber,
             limit: limitNumber,
+            order: [["id", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
         });
 
-        loger.log("info", "Fields fetched with pagination");
-        res.status(200).send({
-            totalItems: fields.count,
-            totalPages: Math.ceil(fields.count / limitNumber),
-            currentPage: pageNumber,
-            data: fields.rows,
-        });
-    } catch (error) {
-        console.log(error);
-        loger.log("error", "Error fetching fields");
-        res.status(500).send({ message: "Server error" });
-    }
-});
-/**
- * @swagger
- * /fields/sort:
- *   get:
- *     summary: Get all fields with pagination and sorting
- *     tags:
- *       - Fields
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Number of items per page
- *       - in: query
- *         name: sort
- *         schema:
- *           type: string
- *           enum: [asc, desc]
- *         description: Sort order (asc for ascending, desc for descending)
- *     responses:
- *       200:
- *         description: A list of fields
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 totalItems:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 currentPage:
- *                   type: integer
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       name:
- *                         type: string
- *                       image:
- *                         type: string
- *       500:
- *         description: Server error
- */
-router.get("/sort", async (req, res) => {
-    try {
-        const { page = 1, limit = 10, sort = "asc" } = req.query;
-
-        const pageNumber = parseInt(page, 10);
-        const limitNumber = parseInt(limit, 10);
-
-        const fields = await Fileds.findAndCountAll({
-            offset: (pageNumber - 1) * limitNumber,
-            limit: limitNumber,
-            order: [["name", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
-        });
-
-        loger.log("info", "Fields fetched with pagination and sorting");
+        loger.log("info", "Fields fetched with pagination, sorting, and name filtering");
         res.status(200).send({
             totalItems: fields.count,
             totalPages: Math.ceil(fields.count / limitNumber),
@@ -232,6 +171,9 @@ router.get("/sort", async (req, res) => {
  *               name:
  *                 type: string
  *                 example: "Updated Field Name"
+ *               image:
+ *                 type: string
+ *                 example: "image.png"
  *     responses:
  *       200:
  *         description: Field updated successfully
@@ -242,14 +184,21 @@ router.get("/sort", async (req, res) => {
  */
 router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) => {
     const { id } = req.params;
-    const { name } = req.body;
     try {
         const field = await Fileds.findByPk(id);
         if (!field) {
             loger.log("info", `Field with ID ${id} not found`);
             return res.status(404).send({ message: "Field not found" });
         }
-        await field.update({ name });
+        const { error, value } = validateFileds(req.body);
+        if (error) {
+            loger.log("error", "Validation failed");
+            return res.status(500).send({ message: "Validation failed" });
+        }
+        await field.update({
+            name: value.name,
+            image: value.image || "No image",
+        });
         loger.log("info", `Field updated: ${id}`);
         res.status(200).send(field);
     } catch (error) {
@@ -281,7 +230,7 @@ router.patch("/:id", roleMiddleware(["admin", "super-admin"]), async (req, res) 
  *       500:
  *         description: Server error
  */
-router.delete("/:id", roleMiddleware(["admin"]) ,async (req, res) => {
+router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
     const { id } = req.params;
     try {
         const field = await Fileds.findByPk(id);
@@ -298,63 +247,5 @@ router.delete("/:id", roleMiddleware(["admin"]) ,async (req, res) => {
         res.status(500).send({ message: "Server error" });
     }
 });
-
-/**
- * @swagger
- * /fields/{name}:
- *   get:
- *     summary: Get fields by name
- *     tags:
- *       - Fields
- *     parameters:
- *       - in: path
- *         name: name
- *         required: true
- *         schema:
- *           type: string
- *         description: Name of the field to search for
- *     responses:
- *       200:
- *         description: Fields matching the name
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   name:
- *                     type: string
- *                   image:
- *                     type: string
- *       404:
- *         description: No fields found with the given name
- *       500:
- *         description: Server error
- */
-router.get("/name", async (req, res) => {
-    const { name } = req.body;
-    try {
-        const fields = await Fileds.findOne({ where: { name: name } });
-
-        if (!fields) {
-            loger.log("info", `No fields found with name: ${name}`);
-            return res
-                .status(404)
-                .send({ message: "No fields found with the given name" });
-        }
-
-        loger.log("info", `Fields fetched by name: ${name}`);
-        res.status(200).send(fields);
-    } catch (error) {
-        console.log(error);
-        loger.log("error", "Error fetching fields by name");
-        res.status(500).send({ message: "Server error" });
-    }
-});
-
-
 
 module.exports = router;

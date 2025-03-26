@@ -117,7 +117,6 @@
  *               - phone
  *               - region_id
  *               - edu_id
- *               - user_id
  *             properties:
  *               image:
  *                 type: string
@@ -139,10 +138,6 @@
  *                 type: integer
  *                 description: ID of the education center
  *                 example: 2
- *               user_id:
- *                 type: integer
- *                 description: ID of the user
- *                 example: 3
  *     responses:
  *       200:
  *         description: Branch created successfully
@@ -299,7 +294,7 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    const branch = await Branch.create(req.body);
+    const branch = await Branch.create(req.body, { user_id: req.user.id });
     res.send(branch);
   } catch (error) {
     res.status(500).send({ message: "Internal server error" });

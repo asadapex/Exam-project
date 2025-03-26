@@ -7,7 +7,6 @@ const branchValidator = Joi.object({
   address: Joi.string().required(),
   region_id: Joi.number().required(),
   edu_id: Joi.number().required(),
-  user_id: Joi.number().required(),
 });
 
 const branchUpdateValidation = Joi.object({
@@ -17,7 +16,6 @@ const branchUpdateValidation = Joi.object({
   address: Joi.string(),
   region_id: Joi.number(),
   edu_id: Joi.number(),
-  user_id: Joi.number(),
 });
 
 module.exports = { branchValidator, branchUpdateValidation };

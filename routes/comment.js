@@ -272,7 +272,7 @@ router.post("/", authMiddleware, async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    const comment = await Comment.create(req.body, { user_id: req.user.id });
+    const comment = await Comment.create({ ...req.body, user_id: req.user.id });
     res.send(comment);
   } catch (error) {
     console.log(error);

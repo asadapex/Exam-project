@@ -138,6 +138,10 @@
  *                 type: integer
  *                 description: ID of the education center
  *                 example: 2
+ *               phone:
+ *                 type: string
+ *                 description: Address of the branch
+ *                 example: A.Navoiy ko'chasi 4-uy
  *     responses:
  *       200:
  *         description: Branch created successfully

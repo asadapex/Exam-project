@@ -2,50 +2,48 @@
  * @swagger
  * tags:
  *   name: Branches
- *   description: API endpoints for managing branches
+ *   description: API for managing branches
  */
 
 /**
  * @swagger
  * /branches/all:
  *   get:
- *     summary: Get all branches with optional filters
+ *     summary: Get all branches
  *     tags: [Branches]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *         description: Number of branches to return per page
+ *         description: Number of branches to return
  *       - in: query
  *         name: offset
  *         schema:
  *           type: integer
- *         description: Page number to retrieve
+ *         description: Offset for pagination
  *       - in: query
  *         name: createdAt
  *         schema:
  *           type: string
  *           enum: [asc, desc]
- *         description: Sort branches by creation date
+ *         description: Sort by creation date
  *       - in: query
  *         name: name
  *         schema:
  *           type: string
- *         description: Filter branches by name
+ *         description: Filter by branch name
  *       - in: query
  *         name: nameSort
  *         schema:
  *           type: string
  *           enum: [asc, desc]
- *         description: Sort branches by name
+ *         description: Sort by branch name
  *       - in: query
  *         name: regionId
  *         schema:
  *           type: integer
- *         description: Filter branches by region ID
+ *         description: Filter by region ID
  *     responses:
  *       200:
  *         description: List of branches
@@ -76,8 +74,6 @@
  *   get:
  *     summary: Get a branch by ID
  *     tags: [Branches]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -100,61 +96,40 @@
 
 /**
  * @swagger
- * /branches/:
+ * /branches:
  *   post:
  *     summary: Create a new branch
  *     tags: [Branches]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - phone
- *               - region_id
- *               - edu_id
  *             properties:
- *               image:
- *                 type: string
- *                 description: URL of the branch image
- *                 example: https://example.com/image.jpg
  *               name:
  *                 type: string
- *                 description: Name of the branch
- *                 example: Main Branch
+ *               image:
+ *                 type: string
  *               phone:
  *                 type: string
- *                 description: Phone number of the branch
- *                 example: +998901234567
  *               region_id:
  *                 type: integer
- *                 description: ID of the region
- *                 example: 1
  *               edu_id:
  *                 type: integer
- *                 description: ID of the education center
- *                 example: 2
  *               address:
  *                 type: string
- *                 description: your location
- *                 example: "ferghana region"
- *               phone:
- *                 type: string
- *                 description: Address of the branch
- *                 example: A.Navoiy ko'chasi 4-uy
  *     responses:
  *       200:
- *         description: Branch created successfully
+ *         description: Branch created
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *       400:
  *         description: Validation error
+ *       404:
+ *         description: Region or Education not found
  *       500:
  *         description: Internal server error
  */
@@ -165,8 +140,6 @@
  *   patch:
  *     summary: Update a branch by ID
  *     tags: [Branches]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -180,9 +153,22 @@
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               region_id:
+ *                 type: integer
+ *               edu_id:
+ *                 type: integer
+ *               address:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Branch updated successfully
+ *         description: Branch updated
  *         content:
  *           application/json:
  *             schema:
@@ -191,6 +177,8 @@
  *         description: Validation error
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: Branch or Region not found
  *       500:
  *         description: Server error
  */
@@ -201,8 +189,6 @@
  *   delete:
  *     summary: Delete a branch by ID
  *     tags: [Branches]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -212,12 +198,19 @@
  *         description: Branch ID
  *     responses:
  *       200:
- *         description: Branch deleted successfully
+ *         description: Branch deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: Branch not found
  *       500:
  *         description: Server error
  */
+
 const express = require("express");
 const { Branch, Region, EduCenter, User } = require("../associations");
 const { Op } = require("sequelize");
@@ -342,6 +335,10 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
 
 router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
   try {
+    const bazaReg = await Region.findByPk(req.body.region_id)
+      if(!bazaReg){
+        return res.status(404).send({message: "Region not found"})
+      }
     if (req.user.role != "admin") {
       const one = await Branch.findOne({
         where: { id: req.params.id, user_id: req.user.id },

@@ -330,6 +330,7 @@ const sendSMS = require("../config/eskiz");
 const Session = require("../models/session");
 const DeviceDetector = require("device-detector-js");
 const resetPasswordValidator = require("../validators/reset-password.validator");
+const { Region } = require("../associations");
 const deviceDetector = new DeviceDetector();
 
 const router = require("express").Router();
@@ -354,9 +355,13 @@ router.post("/register", async (req, res) => {
     if (error)
       return res.status(400).send({ message: error.details[0].message });
 
-    const { email, password, phone, name, ...rest } = req.body;
+    const { email, password, phone, name, region_id, ...rest } = req.body;
     const user_email = await User.findOne({ where: { email } });
     const user_phone = await User.findOne({ where: { phone } });
+    const regionBaza = await Region.findOne({where: {id: region_id}}) 
+    if(!regionBaza){
+      return res.status(404).send({message: "Region not found"});
+    }
 
     if (user_email || user_phone) {
       return res.status(400).send({ message: "User already exists" });
@@ -369,6 +374,7 @@ router.post("/register", async (req, res) => {
       status: "pending",
       phone: phone,
       name,
+      region_id: regionBaza.id,
       ...rest,
     });
     console.log(otp);

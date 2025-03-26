@@ -1,31 +1,28 @@
-const { DataTypes } = require('sequelize');
-const { db } = require('../config/db');
-const Comments = db.define('Comments', {
+const { DataTypes } = require("sequelize");
+const { db } = require("../config/db");
 
+const Comments = db.define("Comments", {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true,
   },
-
-  userId: {
+  text: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  branch_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-
-  learningCenterId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-
   star: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  
-  message: {
-    type: DataTypes.STRING,
+  user_id: {
+    type: DataTypes.INTEGER,
     allowNull: false,
-  }});
+  },
+});
 
 module.exports = Comments;

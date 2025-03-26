@@ -201,11 +201,10 @@ router.get("/", async (req, res) => {
                     model: Region,
                     as: "region",
                 },
-                // {
-                //     model: Comment,
-                //     as: "all coments",
-                // }
-                
+                {
+                    model: Comment,
+                    as: "comments",
+                }
             ],
         });
 

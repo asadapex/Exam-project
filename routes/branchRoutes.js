@@ -138,6 +138,10 @@
  *                 type: integer
  *                 description: ID of the education center
  *                 example: 2
+ *               address:
+ *                 type: string
+ *                 description: your location
+ *                 example: "ferghana region"
  *               phone:
  *                 type: string
  *                 description: Address of the branch
@@ -306,9 +310,32 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    const branch = await Branch.create(req.body, { user_id: req.user.id });
+    
+
+    const bazaRegion = await Region.findByPk(req.body.region_id)
+    if(!bazaRegion){
+      return res.status(404).send({message: "Not found region"})
+    }
+
+    const bazaEdu = await EduCenter.findByPk(req.body.edu_id)
+    if(!bazaEdu){
+      return res.status(404).send({message: "Not found Education"})
+    }
+
+
+    const branch = await Branch.create({
+      name: req.body.name,
+      image: req.body.image || "No image",
+      phone: req.body.phone,
+      region_id: req.body.region_id,
+      edu_id: req.body.edu_id,
+      address: req.body.address,
+      user_id: req.user.id
+    });
+    
     res.send(branch);
   } catch (error) {
+    console.log(error);
     res.status(500).send({ message: "Internal server error" });
   }
 });

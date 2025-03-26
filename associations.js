@@ -221,18 +221,19 @@ Region.hasMany(EduCenter, {
   onUpdate: "CASCADE",
 });
 
+Comment.belongsTo(EduCenter, {
+  foreignKey: "user_id",
+  as: "eduCenter",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 EduCenter.hasMany(Comment, {
-  foreignKey: "edu_id",
+  foreignKey: "user_id",
+  as: "comments",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
-Comment.belongsTo(EduCenter, {
-  foreignKey: "edu_id",
-  onDelete: "CASCADE",
-  onUpdate: "CASCADE",
-});
-
 module.exports = {
   courseRegistration,
   Fields,

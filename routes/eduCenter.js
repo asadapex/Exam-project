@@ -2,9 +2,8 @@ const { Router } = require("express");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
 const loger = require("../logger");
 const { validEdu } = require("../validators/eduValidation");
-const EduCenter = require("../models/edCenter");
-const { Region, User } = require("../associations");
-
+const { Region, User, Branch, Subjet, EduCenter, Comment} = require("../associations");
+const eduCentersSubject = require("../models/educenterSubject");
 const router = Router();
 
 /**
@@ -29,9 +28,6 @@ const router = Router();
  *               region_id:
  *                 type: integer
  *                 example: 1
- *               user_id:
- *                 type: integer
- *                 example: 2
  *               location:
  *                 type: string
  *                 example: "Tashkent"
@@ -41,6 +37,9 @@ const router = Router();
  *               image:
  *                 type: string
  *                 example: "image.png"
+ *               subjects:
+ *                 type: array
+ *                 example: [1, 2, 4]
  *     responses:
  *       201:
  *         description: EduCenter created successfully
@@ -56,26 +55,59 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
             loger.log("info", "Error in validation edu center");
             return res.status(400).send({ message: error.details[0].message });
         }
-        const region = await Region.findOne({ where: { id: value.region_id } });
 
+        const region = await Region.findOne({ where: { id: value.region_id } });
         if (!region) {
-            loger.log("info", "creted edu cneter region not found");
+            loger.log("info", "Created edu center region not found");
             return res
                 .status(404)
                 .send({ message: "Create edu center region not found" });
         }
-        const user = await User.findOne({ where: { id: value.user_id } });
-        if (!user) {
-            loger.log("info", "creted edu cneter user not found");
-            return res
-                .status(404)
-                .send({ message: "Create edu center user not found" });
-        }
+
         loger.log("info", "EduCenter Created");
-        const newEduCenter = await EduCenter.create(value);
+        const newEduCenter = await EduCenter.create({
+            name: value.name,
+            region_id: value.region_id,
+            location: value.location,
+            phone: value.phone,
+            image: value.image || "No image",
+            user_id: req.user.id,
+        });
+
+        const subjectIds = value.subjects;
+
+        const existingSubjects = await Subjet.findAll({
+            where: { id: subjectIds },
+            attributes: ["id"],
+        });
+
+        const existingSubjectIds = existingSubjects.map(
+            (subject) => subject.id
+        );
+
+        const missingSubjects = subjectIds.filter(
+            (id) => !existingSubjectIds.includes(id)
+        );
+
+        if (missingSubjects.length > 0) {
+            loger.log("info", "Some subjects not found in database");
+            return res.status(400).send({
+                message: `The following subjects do not exist: ${missingSubjects.join(
+                    ", "
+                )}`,
+            });
+        }
+
+        const subjects = subjectIds.map((id) => ({
+            edu_id: newEduCenter.id,
+            subject_id: id,
+        }));
+
+        await eduCentersSubject.bulkCreate(subjects);
+
         res.status(201).send(newEduCenter);
     } catch (error) {
-        console.log(error);
+        console.error(error);
         loger.log("error", "Error in create EduCenter");
         res.status(500).send({ message: "Server error" });
     }
@@ -157,21 +189,26 @@ router.get("/", async (req, res) => {
             where: whereClause,
             offset: (pageNumber - 1) * limitNumber,
             limit: limitNumber,
-            order: [["name", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
+            order: [
+                ["createdAt", sort.toLowerCase() === "desc" ? "DESC" : "ASC"],
+            ],
             include: [
                 {
                     model: User,
                     as: "user",
-                    attributes: ["id", "name"],
                 },
                 {
                     model: Region,
                     as: "region",
-                    attributes: ["id", "name"],
                 },
+                // {
+                //     model: Comment,
+                //     as: "all coments",
+                // }l
             ],
         });
 
+        
         loger.log(
             "info",
             "EduCenters fetched with pagination, sorting, and filtering"
@@ -287,15 +324,16 @@ router.get("/:id", async (req, res) => {
  *               region_id:
  *                 type: integer
  *                 example: 1
- *               user_id:
- *                 type: integer
- *                 example: 2
  *               location:
  *                 type: string
  *                 example: "Samarkand"
  *               phone:
  *                 type: string
  *                 example: "+998901234567"
+ *               subjects:
+ *                 type: array
+ *                 example: [1, 2, 4]
+ *
  *     responses:
  *       200:
  *         description: EduCenter updated successfully
@@ -304,13 +342,36 @@ router.get("/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id", roleMiddleware(["ceo"]), async (req, res) => {
+router.patch("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     const { id } = req.params;
     try {
         const { error, value } = validEdu(req.body);
-        if (error) {
-            loger.log("error", "Validation error in update EduCenter");
-            return res.status(400).send({ message: error.details[0].message });
+        if (req.user.role != "admin") {
+            const one = await EduCenter.findOne({
+                where: { id: req.params.id, user_id: req.user.id },
+            });
+            if (!one) {
+                loger.log("info", `This edue center not ${value.name} ceo`);
+                return res
+                    .status(403)
+                    .send({ message: "This not your edu center" });
+            }
+            if (error) {
+                loger.log("error", "Validation error in update EduCenter");
+                return res
+                    .status(400)
+                    .send({ message: error.details[0].message });
+            }
+
+            const eduCenter = await EduCenter.findByPk(id);
+            if (!eduCenter) {
+                loger.log("info", `EduCenter with ID ${id} not found`);
+                return res.status(404).send({ message: "EduCenter not found" });
+            }
+
+            await eduCenter.update(value);
+            loger.log("info", `EduCenter updated: ${id}`);
+            res.status(200).send(eduCenter);
         }
 
         const eduCenter = await EduCenter.findByPk(id);
@@ -351,18 +412,41 @@ router.patch("/:id", roleMiddleware(["ceo"]), async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete("/:id", roleMiddleware(["ceo"]), async (req, res) => {
+router.delete("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     const { id } = req.params;
     try {
-        const eduCenter = await EduCenter.findByPk(id);
-        if (!eduCenter) {
-            loger.log("info", `EduCenter with ID ${id} not found`);
-            return res.status(404).send({ message: "EduCenter not found" });
-        }
+        if (req.user.role != "admin") {
+            const one = await EduCenter.findOne({
+                where: { id: req.params.id, user_id: req.user.id },
+            });
+            if (!one) {
+                loger.log("info", `This edue center not ${value.name} ceo`);
+                return res
+                    .status(403)
+                    .send({ message: "This not your edu center" });
+            }
 
-        await eduCenter.destroy();
+            const eduCenter = await EduCenter.findByPk(id);
+            if (!eduCenter) {
+                loger.log("info", `EduCenter with ID ${id} not found`);
+                return res.status(404).send({ message: "EduCenter not found" });
+            }
+
+            await eduCentersSubject.destroy({
+                where: { edu_id: id },
+            });
+            loger.log("info", `EduCenter deleted: ${id}`);
+            await eduCenter.destroy();
+            res.status(200).send({ message: "EduCenter deleted successfully" });
+        }
+        const eduCenter = await EduCenter.findByPk(id);
+            if (!eduCenter) {
+                loger.log("info", `EduCenter with ID ${id} not found`);
+                return res.status(404).send({ message: "EduCenter not found" });
+            }
         loger.log("info", `EduCenter deleted: ${id}`);
-        res.status(200).send({ message: "EduCenter deleted successfully" });
+            await eduCenter.destroy();
+            res.status(200).send({ message: "EduCenter deleted successfully" });
     } catch (error) {
         console.log(error);
         loger.log("error", "Error deleting EduCenter");

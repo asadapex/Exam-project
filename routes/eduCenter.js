@@ -38,6 +38,9 @@ const router = Router();
  *               phone:
  *                 type: string
  *                 example: "+998901234567"
+ *               image:
+ *                 type: string
+ *                 example: "image.png"
  *     responses:
  *       201:
  *         description: EduCenter created successfully
@@ -46,12 +49,27 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.post("/", roleMiddleware(["ceo"]), async (req, res) => {
+router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     try {
         const { error, value } = validEdu(req.body);
         if (error) {
             loger.log("info", "Error in validation edu center");
             return res.status(400).send({ message: error.details[0].message });
+        }
+        const region = await Region.findOne({ where: { id: value.region_id } });
+
+        if (!region) {
+            loger.log("info", "creted edu cneter region not found");
+            return res
+                .status(404)
+                .send({ message: "Create edu center region not found" });
+        }
+        const user = await User.findOne({ where: { id: value.user_id } });
+        if (!user) {
+            loger.log("info", "creted edu cneter user not found");
+            return res
+                .status(404)
+                .send({ message: "Create edu center user not found" });
         }
         loger.log("info", "EduCenter Created");
         const newEduCenter = await EduCenter.create(value);
@@ -352,6 +370,4 @@ router.delete("/:id", roleMiddleware(["ceo"]), async (req, res) => {
     }
 });
 
-
 module.exports = router;
-

@@ -4,6 +4,7 @@ function validEdu(data) {
     return joi
         .object({
             name: joi.string().min(2).max(50).required(),
+            image: joi.string().min(2).max(50),
             region_id: joi.number().integer().required(),
             user_id: joi.number().integer().required(),
             location: joi.string().min(5).max(100).required(),

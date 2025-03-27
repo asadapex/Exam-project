@@ -255,7 +255,7 @@ router.get("/all", async (req, res) => {
     const totalPages = Math.ceil(totalCount / limit);
     const currentPage = offset / limit + 1;
 
-    logger.log({ info: "Category fetched by user", user: req.user.id });
+    logger.log({ info: "Category fetched by user" });
 
     res.send({
       data: categories,
@@ -277,7 +277,7 @@ router.get("/:id", async (req, res) => {
     if (!category) {
       return res.status(404).send({ message: "Category not found" });
     }
-    logger.log({ info: "Category fetched by user", user: req.user.id });
+    logger.log({ info: "Category fetched by user" });
     res.send(category);
   } catch (error) {
     console.log(error);
@@ -291,6 +291,10 @@ router.post("/", roleMiddleware(["admin"]), async (req, res) => {
     const { error } = categoryValidator.validate(req.body);
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
+    }
+    const one = await Category.findOne({ where: { name: req.body.name } });
+    if (one) {
+      return res.status(400).send({ message: "This category already exists" });
     }
     const newCategory = await Category.create(req.body);
     logger.log({ info: "Category posted by admin", user: req.user.id });

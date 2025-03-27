@@ -313,6 +313,20 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
       return res.status(404).send({ message: "Not found Education" });
     }
 
+    const branchName = Branch.findOne({ where: { name: req.body.name } });
+    if (branchName) {
+      return res
+        .status(400)
+        .send({ message: "This Branch already exists please change name" });
+    }
+
+    const branchPhone = Branch.findOne({ where: { phone: req.body.phone } });
+    if (branchPhone) {
+      return res.status(400).send({
+        message: "This Branch already exists please change phone number",
+      });
+    }
+
     const branch = await Branch.create({
       name: req.body.name,
       image: req.body.image || "No image",

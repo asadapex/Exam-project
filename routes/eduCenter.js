@@ -113,6 +113,21 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         )}`,
       });
     }
+    const eduName = EduCenter.findOne({ where: { name: value.name } });
+    if (eduName) {
+      return res
+        .status(400)
+        .send({ message: "This EduCenter already exists please change name" });
+    }
+
+    const eduPhone = EduCenter.findOne({ where: { phone: value.phone } });
+    if (eduPhone) {
+      return res
+        .status(400)
+        .send({
+          message: "This EduCenter already exists please change phone number",
+        });
+    }
 
     const newEduCenter = await EduCenter.create({
       name: value.name,
@@ -299,6 +314,10 @@ router.get("/", async (req, res) => {
           as: "subjects",
           attributes: ["id", "name"],
         },
+        {
+          model: Like,
+          attributes: ["id"],
+        },
       ],
     });
 
@@ -381,7 +400,7 @@ router.get("/:id", async (req, res) => {
         },
         {
           model: Like,
-          attributes: ["id", "name"],
+          attributes: ["id"],
         },
       ],
     });

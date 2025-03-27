@@ -158,6 +158,42 @@
 
 /**
  * @swagger
+ * /auth/resend-otp:
+ *   post:
+ *     summary: Resend OTP to the user's email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - phone
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *                 example: johndoe@gmail.com
+ *               phone:
+ *                 type: string
+ *                 description: User's phone number
+ *                 example: +998901234567
+ *     responses:
+ *       200:
+ *         description: OTP sent to the user's email
+ *       404:
+ *         description: User not found
+ *       400:
+ *         description: Error sending SMS code
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
  * /auth/login:
  *   post:
  *     summary: Log in a user
@@ -416,6 +452,32 @@ router.post("/verify", async (req, res) => {
   } catch (error) {
     console.log(error);
     logger.error("Error to verify user");
+    res.status(500).send({ message: "Something went wrong" });
+  }
+});
+
+router.post("/resend-otp", async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    const user_email = await User.findOne({ where: { email } });
+    const user_phone = await User.findOne({ where: { phone } });
+    if (!user_email || user_phone) {
+      return res.status(404).send({ message: "Not found" });
+    }
+    const otp = totp.generate(email + "apex");
+    console.log(otp);
+    // const err = await sendSMS(phone, otp);
+    // if (err)
+    //   return res
+    //     .status(400)
+    //     .send({
+    //       message: "Error to send SMS code please enter a valid phone number",
+    //     });
+    sendEmail(email, "New User", otp);
+    res.send({ message: "Otp sended to your email" });
+  } catch (error) {
+    console.log(error);
+    logger.error("Error to resend otp to user");
     res.status(500).send({ message: "Something went wrong" });
   }
 });

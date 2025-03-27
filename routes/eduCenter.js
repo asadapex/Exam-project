@@ -299,18 +299,8 @@ router.get("/", async (req, res) => {
           as: "subjects",
           attributes: ["id", "name"],
         },
-        {
-          model: Like,
-          attributes: ["id"],
-        },
       ],
     });
-
-    for (const edu of eduCenters.rows) {
-      edu.dataValues.likeCount = await Like.count({
-        where: { edu_id: edu.id },
-      });
-    }
 
     loger.log(
       "info",

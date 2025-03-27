@@ -12,6 +12,8 @@ const EduCenterRoutes = require("./routes/eduCenter");
 const SubjectRoutes = require("./routes/subject");
 const branchRoutes = require("./routes/branchRoutes");
 const commentRoutes = require("./routes/comment");
+const excelRoutes = require("./routes/excel");
+const resourceRoutes = require("./routes/resources");
 const cors = require("cors");
 const setupSwagger = require("./swagger");
 const app = express();
@@ -39,6 +41,8 @@ app.use("/eduCenter", EduCenterRoutes);
 app.use("/subject", SubjectRoutes);
 app.use("/branches", branchRoutes);
 app.use("/comments", commentRoutes);
+app.use("/excel-users", excelRoutes);
+app.use("/resources", resourceRoutes);
 app.use(sessionRoutes);
 setupSwagger(app);
 

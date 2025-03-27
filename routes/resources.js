@@ -1,3 +1,174 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Resources
+ *   description: Resource management API
+ */
+
+/**
+ * @swagger
+ * /resources/all:
+ *   get:
+ *     summary: Get all resources with pagination and filters
+ *     tags: [Resources]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of resources per page
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Filter resources by name
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *         description: Filter by category ID
+ *       - in: query
+ *         name: createdAt
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort by creation date
+ *       - in: query
+ *         name: nameSort
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort by name
+ *     responses:
+ *       200:
+ *         description: List of resources
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /resources/{id}:
+ *   get:
+ *     summary: Get a resource by ID
+ *     tags: [Resources]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Resource ID
+ *     responses:
+ *       200:
+ *         description: Resource details
+ *       404:
+ *         description: Resource not found
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /resources:
+ *   post:
+ *     summary: Create a new resource
+ *     tags: [Resources]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: NodeJs
+ *               description:
+ *                 type: string
+ *                 example: For beginners
+ *               file:
+ *                 type: string
+ *                 example: https://example.com/file.pdf
+ *               link:
+ *                 type: string
+ *                 example: https://example.com/course
+ *               category_id:
+ *                 type: integer
+ *                 example: 1
+ *               image:
+ *                 type: string
+ *                 example: https://example.com/image.png
+ *             required:
+ *               - name
+ *               - description
+ *               - category_id
+ *     responses:
+ *       200:
+ *         description: Resource created successfully
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /resources/{id}:
+ *   patch:
+ *     summary: Update a resource by ID
+ *     tags: [Resources]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Resource ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Resource updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Resource not found
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /resources/{id}:
+ *   delete:
+ *     summary: Delete a resource by ID
+ *     tags: [Resources]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Resource ID
+ *     responses:
+ *       200:
+ *         description: Resource deleted successfully
+ *       404:
+ *         description: Resource not found
+ *       500:
+ *         description: Internal server error
+ */
+
 const { authMiddleware } = require("../middlewares/auth-role.middlewars");
 const logger = require("../logger");
 const { Resource, Category, User } = require("../associations");
@@ -89,7 +260,12 @@ router.post("/", authMiddleware, async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    const resource = await Resource.create(req.body);
+    const { category_id, ...rest } = req.body;
+    const category = await Category.findOne({ where: { id: category_id } });
+    if (!category) {
+      return res.status(404).send({ message: "Category not found" });
+    }
+    const resource = await Resource.create({ ...rest, user_id: req.user.id });
     logger.info("User created resource");
     res.send(resource);
   } catch (error) {
@@ -101,7 +277,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
 router.patch("/:id", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role === "user") {
+    if (req.user.role !== "admin") {
       const resource = await Resource.findOne({
         where: { id: req.params.id, user_id: req.user.id },
       });
@@ -137,7 +313,7 @@ router.patch("/:id", authMiddleware, async (req, res) => {
 
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role === "user") {
+    if (req.user.role !== "admin") {
       const resource = await Resource.findOne({
         where: { id: req.params.id, user_id: req.user.id },
       });

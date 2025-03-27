@@ -302,10 +302,15 @@ router.post("/", async (req, res) => {
       return res.status(400).send({ message: error.details[0].message });
     }
 
-    const { password, email, phone, ...rest } = req.body;
+    const { password, email, phone, region_id, ...rest } = req.body;
 
     const existingUserByEmail = await User.findOne({ where: { email } });
     const existingUserByPhone = await User.findOne({ where: { phone } });
+
+    const regionBaza = await Region.findOne({ where: { id: region_id } });
+    if (!regionBaza) {
+      return res.status(404).send({ message: "Region not found" });
+    }
 
     if (existingUserByEmail || existingUserByPhone) {
       return res.status(400).send({ message: "User already exists" });

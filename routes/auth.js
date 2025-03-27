@@ -321,7 +321,6 @@
 const userValidator = require("../validators/user.validator");
 const { totp } = require("otplib");
 const bcrypt = require("bcrypt");
-const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const logger = require("../logger");
 const sendEmail = require("../config/sendEmail");
@@ -330,7 +329,7 @@ const sendSMS = require("../config/eskiz");
 const Session = require("../models/session");
 const DeviceDetector = require("device-detector-js");
 const resetPasswordValidator = require("../validators/reset-password.validator");
-const { Region } = require("../associations");
+const { Region, User } = require("../associations");
 const deviceDetector = new DeviceDetector();
 
 const router = require("express").Router();
@@ -358,9 +357,9 @@ router.post("/register", async (req, res) => {
     const { email, password, phone, name, region_id, ...rest } = req.body;
     const user_email = await User.findOne({ where: { email } });
     const user_phone = await User.findOne({ where: { phone } });
-    const regionBaza = await Region.findOne({where: {id: region_id}}) 
-    if(!regionBaza){
-      return res.status(404).send({message: "Region not found"});
+    const regionBaza = await Region.findOne({ where: { id: region_id } });
+    if (!regionBaza) {
+      return res.status(404).send({ message: "Region not found" });
     }
 
     if (user_email || user_phone) {

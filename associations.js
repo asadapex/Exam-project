@@ -211,15 +211,15 @@ Region.hasMany(EduCenter, {
   onUpdate: "CASCADE",
 });
 
-Branch.belongsTo(courseRegistration, {
+courseRegistration.belongsTo(Branch, {
   foreignKey: "branch_id",
   as: "branch",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
-courseRegistration.hasMany(Branch, {
+Branch.hasMany(courseRegistration, {
   foreignKey: "branch_id",
-  as: "branch",
+  as: "registrations",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });

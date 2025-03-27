@@ -8,6 +8,7 @@ function validEdu(data) {
             region_id: joi.number().integer().required(),
             location: joi.string().min(5).max(100).required(),
             subjects: joi.array().min(1).required(),
+            fields: joi.array().min(1).required(),
             phone: joi
                 .string()
                 .pattern(/^\+998[0-9]{9}$/)

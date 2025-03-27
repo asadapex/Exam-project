@@ -114,6 +114,21 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         )}`,
       });
     }
+    const eduName = EduCenter.findOne({ where: { name: value.name } });
+    if (eduName) {
+      return res
+        .status(400)
+        .send({ message: "This EduCenter already exists please change name" });
+    }
+
+    const eduPhone = EduCenter.findOne({ where: { phone: value.phone } });
+    if (eduPhone) {
+      return res
+        .status(400)
+        .send({
+          message: "This EduCenter already exists please change phone number",
+        });
+    }
 
     const newEduCenter = await EduCenter.create({
       name: value.name,
@@ -297,7 +312,44 @@ router.get("/", async (req, res) => {
       offset: (pageNumber - 1) * limitNumber,
       limit: limitNumber,
       order: [["createdAt", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
+
       include: includeClause,
+
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Region,
+          as: "region",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Comment,
+          as: "comments",
+          attributes: ["id", "text", "star"],
+        },
+        {
+          model: Fields,
+          as: "fields",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Branch,
+          attributes: ["id", "name", "address", "phone"],
+        },
+        {
+          model: Subjet,
+          as: "subjects",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Like,
+          attributes: ["id"],
+        },
+      ],
     });
 
     loger.log(

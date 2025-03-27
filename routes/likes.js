@@ -98,6 +98,11 @@ route.post("/", authMiddleware, async (req, res) => {
       return res.status(404).send({ message: "EduCenter not found" });
     }
 
+    const liked = await Like.findOne({ where: { user_id: req.user.id, edu_id } });
+    if (liked) {
+      return res.status(400).send({ message: "You already posted like" });
+    }
+
     const like = await Like.create({ edu_id, user_id: req.user.id, ...rest });
     res.send(like);
   } catch (error) {

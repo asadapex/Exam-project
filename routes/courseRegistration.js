@@ -299,13 +299,13 @@ router.post("/", authMiddleware, async (req, res) => {
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
     }
-    
-    const bazaBranch = await Branch.findByPk(req.body.branch_id)
-    if(!bazaBranch){
-      logger.log("info", "Register course in branch not found")
-      return res.status(404).send({message: "Branch not found !"})
+
+    const bazaBranch = await Branch.findByPk(req.body.branch_id);
+    if (!bazaBranch) {
+      logger.log("info", "Register course in branch not found");
+      return res.status(404).send({ message: "Branch not found !" });
     }
-     
+
     const registration = await courseRegistration.create({
       ...req.body,
       user_id: req.user.id,
@@ -335,10 +335,10 @@ router.patch("/:id", authMiddleware, async (req, res) => {
       return res.status(404).send({ message: "Registration not found" });
     }
 
-    const bazaBranch = await Branch.findByPk(req.body.branch_id)
-    if(!bazaBranch){
-      logger.log("info", "Register course in branch not found")
-      return res.status(404).send({message: "Branch not found !"})
+    const bazaBranch = await Branch.findByPk(req.body.branch_id);
+    if (!bazaBranch) {
+      logger.log("info", "Register course in branch not found");
+      return res.status(404).send({ message: "Branch not found !" });
     }
 
     await registration.update(req.body);

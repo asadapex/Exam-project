@@ -579,7 +579,9 @@ router.patch("/reset-password", authMiddleware, async (req, res) => {
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(userId, {
+      include: { model: Region, attributes: ["name"] },
+    });
     if (!user) {
       return res.status(404).send({ message: "User not found" });
     }

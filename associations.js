@@ -161,13 +161,13 @@ Like.belongsTo(User, {
   onUpdate: "CASCADE",
 });
 
-Branch.hasMany(Like, {
-  foreignKey: "branch_id",
+EduCenter.hasMany(Like, {
+  foreignKey: "edu_id",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
-Like.belongsTo(Branch, {
-  foreignKey: "branch_id",
+Like.belongsTo(EduCenter, {
+  foreignKey: "edu_id",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
@@ -250,7 +250,6 @@ User.hasMany(Branch, {
   onUpdate: "CASCADE",
 });
 
-
 EduCenter.belongsToMany(Subjet, {
   through: EduCenter_Subject,
   foreignKey: "edu_id",
@@ -262,7 +261,7 @@ EduCenter.belongsToMany(Subjet, {
 Subjet.belongsToMany(EduCenter, {
   through: EduCenter_Subject,
   foreignKey: "subject_id",
-  as: "eduCenters", 
+  as: "eduCenters",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
@@ -270,7 +269,7 @@ Subjet.belongsToMany(EduCenter, {
 EduCenter.belongsToMany(Fields, {
   through: EduCenter_Field,
   foreignKey: "edu_id",
-  as: "fields", 
+  as: "fields",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });

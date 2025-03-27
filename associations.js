@@ -58,11 +58,13 @@ Resource.belongsTo(Category, {
 
 EduCenter.hasMany(Branch, {
   foreignKey: "edu_id",
+  as: "eduCenter",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
 Branch.belongsTo(EduCenter, {
   foreignKey: "edu_id",
+  as: "eduCenter",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });

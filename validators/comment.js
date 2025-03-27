@@ -9,8 +9,6 @@ const commentValidation = Joi.object({
 const commentUpdateValidation = Joi.object({
   text: Joi.string().required(),
   star: Joi.number().integer().min(1).max(5).required(),
-  user_id: Joi.number().required(),
-  edu_id: Joi.number().required(),
 });
 
 module.exports = { commentValidation, commentUpdateValidation };

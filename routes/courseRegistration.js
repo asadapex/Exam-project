@@ -137,12 +137,9 @@
  *           schema:
  *             type: object
  *             properties:
- *               edu_id:
- *                 type: string
  *               branch_id:
- *                 type: string
- *               course_id:
- *                 type: string
+ *                 type: integer
+ *                 example: 1
  *     responses:
  *       200:
  *         description: Registration updated successfully
@@ -218,7 +215,18 @@ router.get("/my-registrations", authMiddleware, async (req, res) => {
       offset,
       include: [
         { model: User, attributes: ["name", "email"] },
-        { model: Branch, as: "branch", attributes: ["name"] },
+        {
+          model: Branch,
+          as: "branch",
+          attributes: ["name", "address", "region_id", "phone"],
+          include: [
+            {
+              model: EduCenter,
+              as: "eduCenter",
+              attributes: ["name", "location", "region_id", "phone"],
+            },
+          ],
+        },
       ],
     });
 
@@ -267,6 +275,21 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
       where: whereCondition,
       limit,
       offset,
+      include: [
+        { model: User, attributes: ["name", "email"] },
+        {
+          model: Branch,
+          as: "branch",
+          attributes: ["name", "address", "region_id", "phone"],
+          include: [
+            {
+              model: EduCenter,
+              as: "eduCenter",
+              attributes: ["name", "location", "region_id", "phone"],
+            },
+          ],
+        },
+      ],
     });
 
     const totalPages = Math.ceil(totalCount / limit);
@@ -342,7 +365,11 @@ router.patch("/:id", authMiddleware, async (req, res) => {
     }
 
     await registration.update(req.body);
-    logger.log("Admin patched registration");
+    logger.log({
+      level: "info",
+      message: "Admin patched registration",
+    });
+
     res.send(registration);
   } catch (error) {
     console.log(error);

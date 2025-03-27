@@ -265,7 +265,12 @@ router.post("/", authMiddleware, async (req, res) => {
     if (!category) {
       return res.status(404).send({ message: "Category not found" });
     }
-    const resource = await Resource.create({ ...rest, user_id: req.user.id });
+
+    const resource = await Resource.create({
+      ...rest,
+      category_id,
+      user_id: req.user.id,
+    });
     logger.info("User created resource");
     res.send(resource);
   } catch (error) {

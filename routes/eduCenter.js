@@ -77,20 +77,17 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         .send({ message: "Create edu center region not found" });
     }
 
-    const subjectIds = value.subjects;
-    const fieldIds = value.fields;
+    const uniqueSubjectIds = [...new Set(value.subjects)];
+    const uniqueFieldIds = [...new Set(value.fields)];
 
     const existingSubjects = await Subjet.findAll({
-      where: { id: subjectIds },
+      where: { id: uniqueSubjectIds },
       attributes: ["id"],
     });
-
     const existingSubjectIds = existingSubjects.map((subject) => subject.id);
-
-    const missingSubjects = subjectIds.filter(
+    const missingSubjects = uniqueSubjectIds.filter(
       (id) => !existingSubjectIds.includes(id)
     );
-
     if (missingSubjects.length > 0) {
       loger.log("info", "Some subjects not found in database");
       return res.status(400).send({
@@ -101,16 +98,13 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     }
 
     const existingFields = await Fields.findAll({
-      where: { id: fieldIds },
+      where: { id: uniqueFieldIds },
       attributes: ["id"],
     });
-
     const existingFieldIds = existingFields.map((field) => field.id);
-
-    const missingFields = fieldIds.filter(
+    const missingFields = uniqueFieldIds.filter(
       (id) => !existingFieldIds.includes(id)
     );
-
     if (missingFields.length > 0) {
       loger.log("info", "Some fields not found in database");
       return res.status(400).send({
@@ -129,17 +123,16 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
       user_id: req.user.id,
     });
 
-    const subjects = subjectIds.map((id) => ({
+    const subjects = uniqueSubjectIds.map((id) => ({
       edu_id: newEduCenter.id,
       subject_id: id,
     }));
+    await eduCentersSubject.bulkCreate(subjects);
 
-    const fields = fieldIds.map((id) => ({
+    const fields = uniqueFieldIds.map((id) => ({
       edu_id: newEduCenter.id,
       field_id: id,
     }));
-
-    await eduCentersSubject.bulkCreate(subjects);
     await eduCentersField.bulkCreate(fields);
 
     loger.log("info", "EduCenter Created");

@@ -8,12 +8,12 @@ const Like = db.define("Likes", {
     primaryKey: true,
   },
 
-  learningCenterId: {
+  edu_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
 
-  userId: {
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
   }});

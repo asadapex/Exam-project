@@ -322,6 +322,7 @@ router.post("/", roleMiddleware(["admin", "ceo"]), async (req, res) => {
       address: req.body.address,
       user_id: req.user.id,
     });
+    console.log(branch);
 
     res.send(branch);
   } catch (error) {

@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
+const {Op} = require("sequelize")
 const loger = require("../logger");
 const { validEdu } = require("../validators/eduValidation");
 const {
@@ -143,12 +144,11 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     res.status(500).send({ message: "Server error" });
   }
 });
-
 /**
  * @swagger
  * /eduCenter:
  *   get:
- *     summary: Get all EduCenters with pagination, sorting, and optional filtering by fields names, region name, and subjects
+ *     summary: Get all EduCenters with pagination, sorting, and optional filtering by region ID, fields name, and subject name
  *     tags:
  *       - EduCenter
  *     parameters:
@@ -172,19 +172,17 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
  *         name: fields_name
  *         schema:
  *           type: string
- *         description: Filter EduCenters by fields names
+ *         description: Filter EduCenters by fields name (e.g., "Programming")
  *       - in: query
- *         name: region_name
+ *         name: region_id
  *         schema:
- *           type: string
- *         description: Filter EduCenters by region name
+ *           type: integer
+ *         description: Filter EduCenters by region ID
  *       - in: query
  *         name: subjects
  *         schema:
- *           type: array
- *           items:
- *             type: integer
- *         description: Filter EduCenters by subject IDs
+ *           type: string
+ *         description: Filter EduCenters by subject name (e.g., "Mathematics")
  *     responses:
  *       200:
  *         description: A list of EduCenters
@@ -236,6 +234,7 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
  *       500:
  *         description: Server error
  */
+
 router.get("/", async (req, res) => {
   try {
     const {
@@ -243,7 +242,7 @@ router.get("/", async (req, res) => {
       limit = 10,
       sort = "asc",
       fields_name,
-      region_name,
+      region_id,
       subjects,
     } = req.query;
 
@@ -251,60 +250,59 @@ router.get("/", async (req, res) => {
     const limitNumber = parseInt(limit, 10);
 
     const whereClause = {};
-    if (region_name) {
-      whereClause["$region.name$"] = { [Op.like]: `%${region_name}%` };
+    if (region_id) {
+      whereClause["region_id"] = region_id; 
     }
 
-    if (subjects) {
-      const subjectIds = Array.isArray(subjects) ? subjects : [subjects];
-      whereClause["$subjects.id$"] = { [Op.in]: subjectIds };
-    }
-
-    if (fields_name) {
-      whereClause["$Filds.name$"] = { [Op.like]: `%${fields_name}%` };
-    }
+    const includeClause = [
+      {
+        model: User,
+        as: "user",
+        attributes: ["id", "name"],
+      },
+      {
+        model: Region,
+        as: "region",
+        attributes: ["id", "name"],
+      },
+      {
+        model: Comment,
+        as: "comments",
+        attributes: ["id", "text", "star"],
+      },
+      {
+        model: Fields,
+        as: "fields",
+        attributes: ["id", "name"],
+        where: fields_name
+          ? { name: { [Op.like]: `%${fields_name}%` } } 
+          : undefined,
+      },
+      {
+        model: Branch,
+        attributes: ["id", "name", "address", "phone"],
+      },
+      {
+        model: Subjet,
+        as: "subjects",
+        attributes: ["id", "name"],
+        where: subjects
+          ? { name: { [Op.like]: `%${subjects}%` } } // Filter by subject name
+          : undefined,
+      },
+    ];
 
     const eduCenters = await EduCenter.findAndCountAll({
       where: whereClause,
       offset: (pageNumber - 1) * limitNumber,
       limit: limitNumber,
       order: [["createdAt", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Region,
-          as: "region",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Comment,
-          as: "comments",
-          attributes: ["id", "text", "star"],
-        },
-        {
-          model: Fields,
-          as: "fields",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Branch,
-          attributes: ["id", "name", "address", "phone"],
-        },
-        {
-          model: Subjet,
-          as: "subjects",
-          attributes: ["id", "name"],
-        },
-      ],
+      include: includeClause,
     });
 
     loger.log(
       "info",
-      "EduCenters fetched with pagination, sorting, and filtering by fields names"
+      "EduCenters fetched with pagination, sorting, and filtering by region ID, fields name, and subject name"
     );
     res.status(200).send({
       totalItems: eduCenters.count,
@@ -313,7 +311,7 @@ router.get("/", async (req, res) => {
       data: eduCenters.rows,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     loger.log("error", "Error fetching EduCenters");
     res.status(500).send({ message: "Server error" });
   }
@@ -381,7 +379,7 @@ router.get("/:id", async (req, res) => {
         },
         {
           model: Like,
-          attributes: ["id", "name"],
+          attributes: ["id"],
         },
       ],
     });

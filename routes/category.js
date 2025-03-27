@@ -221,7 +221,7 @@ const { Op } = require("sequelize");
 
 const router = require("express").Router();
 
-router.get("/all", authMiddleware, async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
     let { limit, offset, name, createdAt, nameSort } = req.query;
 
@@ -271,7 +271,7 @@ router.get("/all", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/:id", authMiddleware, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const category = await Category.findByPk(req.params.id);
     if (!category) {

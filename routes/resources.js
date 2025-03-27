@@ -179,7 +179,7 @@ const {
   resourceUpdateValidator,
 } = require("../validators/resource.validator");
 
-router.get("/all", authMiddleware, async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
     let { limit, offset, name, nameSort, createdAt, categoryId } = req.query;
     limit = parseInt(limit) || 10;
@@ -232,7 +232,7 @@ router.get("/all", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/:id", authMiddleware, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const resource = await Resource.findByPk(req.params.id, {
       include: [

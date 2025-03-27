@@ -224,7 +224,7 @@ const {
   roleMiddleware,
 } = require("../middlewares/auth-role.middlewars");
 
-router.get("/all", authMiddleware, async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
     let { limit, offset, createdAt, name, nameSort, regionId } = req.query;
     limit = parseInt(limit) || 10;
@@ -277,7 +277,7 @@ router.get("/all", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/:id", authMiddleware, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const branch = await Branch.findByPk(req.params.id, {
       include: [

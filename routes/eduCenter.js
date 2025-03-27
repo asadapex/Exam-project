@@ -10,9 +10,10 @@ const {
   Comment,
   Fields,
   Branch,
+  Like,
 } = require("../associations");
 const eduCentersSubject = require("../models/educenterSubject");
-const eduCentersField = require("../models/educenterField")
+const eduCentersField = require("../models/educenterField");
 const router = Router();
 
 /**
@@ -150,7 +151,6 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
   }
 });
 
-
 /**
  * @swagger
  * /eduCenter:
@@ -245,7 +245,14 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
  */
 router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 10, sort = "asc", fields_name, region_name, subjects } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      sort = "asc",
+      fields_name,
+      region_name,
+      subjects,
+    } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
@@ -290,18 +297,27 @@ router.get("/", async (req, res) => {
           as: "fields",
           attributes: ["id", "name"],
         },
-        // {
-        //   model: Branch,
-        //   as: "brnachs",
-        //   attributes: ["name", "address"],
-        // },
+        {
+          model: Branch,
+          attributes: ["id", "name", "address", "phone"],
+        },
         {
           model: Subjet,
           as: "subjects",
           attributes: ["id", "name"],
         },
+        {
+          model: Like,
+          attributes: ["id"],
+        },
       ],
     });
+
+    for (const edu of eduCenters.rows) {
+      edu.dataValues.likeCount = await Like.count({
+        where: { edu_id: edu.id },
+      });
+    }
 
     loger.log(
       "info",
@@ -379,6 +395,10 @@ router.get("/:id", async (req, res) => {
           model: Comment,
           as: "comments",
           attributes: ["id", "text", "star"],
+        },
+        {
+          model: Like,
+          attributes: ["id", "name"],
         },
       ],
     });

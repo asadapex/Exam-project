@@ -14,6 +14,7 @@ const branchRoutes = require("./routes/branchRoutes");
 const commentRoutes = require("./routes/comment");
 const excelRoutes = require("./routes/excel");
 const resourceRoutes = require("./routes/resources");
+const likeRoutes = require("./routes/likes");
 const cors = require("cors");
 const setupSwagger = require("./swagger");
 const app = express();
@@ -43,6 +44,7 @@ app.use("/branches", branchRoutes);
 app.use("/comments", commentRoutes);
 app.use("/excel-users", excelRoutes);
 app.use("/resources", resourceRoutes);
+app.use("/likes", likeRoutes);
 app.use(sessionRoutes);
 setupSwagger(app);
 

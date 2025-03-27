@@ -250,6 +250,39 @@ User.hasMany(Branch, {
   onUpdate: "CASCADE",
 });
 
+
+EduCenter.belongsToMany(Subjet, {
+  through: EduCenter_Subject,
+  foreignKey: "edu_id",
+  as: "subjects",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Subjet.belongsToMany(EduCenter, {
+  through: EduCenter_Subject,
+  foreignKey: "subject_id",
+  as: "eduCenters", 
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+EduCenter.belongsToMany(Fields, {
+  through: EduCenter_Field,
+  foreignKey: "edu_id",
+  as: "fields", 
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Fields.belongsToMany(EduCenter, {
+  through: EduCenter_Field,
+  foreignKey: "field_id",
+  as: "eduCenters",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
 module.exports = {
   courseRegistration,
   Fields,

@@ -322,6 +322,7 @@ router.post("/", async (req, res) => {
       email,
       phone,
       password: hash,
+      region_id: region_id,
       ...rest,
       status: "active",
     });
@@ -329,7 +330,7 @@ router.post("/", async (req, res) => {
     logger.info("Admin created a new user");
     res.status(201).send(newUser);
   } catch (error) {
-    console.error(error);
+    console.log(error);
     res.status(500).send({ message: "Error in creating user" });
     logger.error("Error in creating user", { error });
   }

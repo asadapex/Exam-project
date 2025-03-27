@@ -5,13 +5,14 @@ const { validEdu } = require("../validators/eduValidation");
 const {
   Region,
   User,
-  Branch,
   Subjet,
   EduCenter,
   Comment,
   Fields,
+  Branch,
 } = require("../associations");
 const eduCentersSubject = require("../models/educenterSubject");
+const eduCentersField = require("../models/educenterField")
 const router = Router();
 
 /**
@@ -48,6 +49,9 @@ const router = Router();
  *               subjects:
  *                 type: array
  *                 example: [1, 2, 4]
+ *               fields:
+ *                 type: array
+ *                 example: [3, 5, 7]
  *     responses:
  *       201:
  *         description: EduCenter created successfully
@@ -73,6 +77,7 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     }
 
     const subjectIds = value.subjects;
+    const fieldIds = value.fields;
 
     const existingSubjects = await Subjet.findAll({
       where: { id: subjectIds },
@@ -94,13 +99,26 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
       });
     }
 
-    const subjects = subjectIds.map((id) => ({
-      edu_id: newEduCenter.id,
-      subject_id: id,
-    }));
+    const existingFields = await Fields.findAll({
+      where: { id: fieldIds },
+      attributes: ["id"],
+    });
 
+    const existingFieldIds = existingFields.map((field) => field.id);
 
-    loger.log("info", "EduCenter Created");
+    const missingFields = fieldIds.filter(
+      (id) => !existingFieldIds.includes(id)
+    );
+
+    if (missingFields.length > 0) {
+      loger.log("info", "Some fields not found in database");
+      return res.status(400).send({
+        message: `The following fields do not exist: ${missingFields.join(
+          ", "
+        )}`,
+      });
+    }
+
     const newEduCenter = await EduCenter.create({
       name: value.name,
       region_id: value.region_id,
@@ -110,9 +128,20 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
       user_id: req.user.id,
     });
 
+    const subjects = subjectIds.map((id) => ({
+      edu_id: newEduCenter.id,
+      subject_id: id,
+    }));
+
+    const fields = fieldIds.map((id) => ({
+      edu_id: newEduCenter.id,
+      field_id: id,
+    }));
 
     await eduCentersSubject.bulkCreate(subjects);
+    await eduCentersField.bulkCreate(fields);
 
+    loger.log("info", "EduCenter Created");
     res.status(201).send(newEduCenter);
   } catch (error) {
     console.error(error);
@@ -121,11 +150,12 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
   }
 });
 
+
 /**
  * @swagger
  * /eduCenter:
  *   get:
- *     summary: Get all EduCenters with pagination, sorting, and optional filtering by name
+ *     summary: Get all EduCenters with pagination, sorting, and optional filtering by fields names, region name, and subjects
  *     tags:
  *       - EduCenter
  *     parameters:
@@ -146,10 +176,22 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
  *           enum: [asc, desc]
  *         description: Sort order (asc for ascending, desc for descending)
  *       - in: query
- *         name: name
+ *         name: fields_name
  *         schema:
  *           type: string
- *         description: Filter EduCenters by name
+ *         description: Filter EduCenters by fields names
+ *       - in: query
+ *         name: region_name
+ *         schema:
+ *           type: string
+ *         description: Filter EduCenters by region name
+ *       - in: query
+ *         name: subjects
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: integer
+ *         description: Filter EduCenters by subject IDs
  *     responses:
  *       200:
  *         description: A list of EduCenters
@@ -173,25 +215,54 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
  *                         type: integer
  *                       name:
  *                         type: string
- *                       region_id:
- *                         type: integer
- *                       user_id:
- *                         type: integer
- *                       location:
- *                         type: string
- *                       phone:
- *                         type: string
+ *                       region:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           name:
+ *                             type: string
+ *                       fields:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                             name:
+ *                               type: string
+ *                       subjects:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                             name:
+ *                               type: string
  *       500:
  *         description: Server error
  */
 router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 10, sort = "asc", name } = req.query;
+    const { page = 1, limit = 10, sort = "asc", fields_name, region_name, subjects } = req.query;
 
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
 
-    const whereClause = name ? { name: { [Op.like]: `%${name}%` } } : {};
+    const whereClause = {};
+    if (region_name) {
+      whereClause["$region.name$"] = { [Op.like]: `%${region_name}%` };
+    }
+
+    if (subjects) {
+      const subjectIds = Array.isArray(subjects) ? subjects : [subjects];
+      whereClause["$subjects.id$"] = { [Op.in]: subjectIds };
+    }
+
+    if (fields_name) {
+      whereClause["$Filds.name$"] = { [Op.like]: `%${fields_name}%` };
+    }
 
     const eduCenters = await EduCenter.findAndCountAll({
       where: whereClause,
@@ -215,13 +286,18 @@ router.get("/", async (req, res) => {
           attributes: ["id", "text", "star"],
         },
         {
-          model: Subjet,
-          as: "subjects",
+          model: Fields,
+          as: "fields",
           attributes: ["id", "name"],
         },
+        // {
+        //   model: Branch,
+        //   as: "brnachs",
+        //   attributes: ["name", "address"],
+        // },
         {
-          model: Fields,
-          as: "Filds",
+          model: Subjet,
+          as: "subjects",
           attributes: ["id", "name"],
         },
       ],
@@ -229,7 +305,7 @@ router.get("/", async (req, res) => {
 
     loger.log(
       "info",
-      "EduCenters fetched with pagination, sorting, and filtering"
+      "EduCenters fetched with pagination, sorting, and filtering by fields names"
     );
     res.status(200).send({
       totalItems: eduCenters.count,

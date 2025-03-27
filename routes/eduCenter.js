@@ -9,6 +9,7 @@ const {
   Subjet,
   EduCenter,
   Comment,
+  Fields,
 } = require("../associations");
 const eduCentersSubject = require("../models/educenterSubject");
 const router = Router();
@@ -71,16 +72,6 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         .send({ message: "Create edu center region not found" });
     }
 
-    loger.log("info", "EduCenter Created");
-    const newEduCenter = await EduCenter.create({
-      name: value.name,
-      region_id: value.region_id,
-      location: value.location,
-      phone: value.phone,
-      image: value.image || "No image",
-      user_id: req.user.id,
-    });
-
     const subjectIds = value.subjects;
 
     const existingSubjects = await Subjet.findAll({
@@ -107,6 +98,18 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
       edu_id: newEduCenter.id,
       subject_id: id,
     }));
+
+
+    loger.log("info", "EduCenter Created");
+    const newEduCenter = await EduCenter.create({
+      name: value.name,
+      region_id: value.region_id,
+      location: value.location,
+      phone: value.phone,
+      image: value.image || "No image",
+      user_id: req.user.id,
+    });
+
 
     await eduCentersSubject.bulkCreate(subjects);
 
@@ -210,6 +213,16 @@ router.get("/", async (req, res) => {
           model: Comment,
           as: "comments",
           attributes: ["id", "text", "star"],
+        },
+        {
+          model: Subjet,
+          as: "subjects",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Fields,
+          as: "Filds",
+          attributes: ["id", "name"],
         },
       ],
     });

@@ -215,11 +215,6 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
     const whereClause = {};
     const order = [];
 
-    const regionID = await Region.findByPk(region_id)
-    if(!regionID){
-      return res.status(404).send({message: "Region not found"})
-    }
-
     if (name) {
       whereClause.name = { [Op.like]: `%${name}%` };
     }
@@ -349,6 +344,11 @@ router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
     const user = await User.findByPk(req.params.id);
     if (!user) {
       return res.status(404).send({ message: "User not found" });
+    }
+
+    const BazaReg = await Region.findByPk(req.body.region_id)
+    if(!BazaReg){
+      return res.status(404).send({message: "Region not found"})
     }
 
     await user.update(req.body);

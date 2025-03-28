@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
-const { Op } = require("sequelize");
+const {Op} = require("sequelize")
 const loger = require("../logger");
 const { validEdu } = require("../validators/eduValidation");
 const {
@@ -114,22 +114,21 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         )}`,
       });
     }
-
-    const eduName = await EduCenter.findOne({ where: { name: value.name } });
+    const eduName = EduCenter.findOne({ where: { name: value.name } });
     if (eduName) {
       return res
         .status(400)
         .send({ message: "This EduCenter already exists please change name" });
     }
-    console.log(eduName, 1111);
 
-    const eduPhone = await EduCenter.findOne({ where: { phone: value.phone } });
+    const eduPhone = EduCenter.findOne({ where: { phone: value.phone } });
     if (eduPhone) {
-      return res.status(400).send({
-        message: "This EduCenter already exists please change phone number",
-      });
+      return res
+        .status(400)
+        .send({
+          message: "This EduCenter already exists please change phone number",
+        });
     }
-    console.log(eduPhone, 2222);
 
     const newEduCenter = await EduCenter.create({
       name: value.name,
@@ -267,7 +266,7 @@ router.get("/", async (req, res) => {
 
     const whereClause = {};
     if (region_id) {
-      whereClause["region_id"] = region_id;
+      whereClause["region_id"] = region_id; 
     }
 
     const includeClause = [
@@ -291,7 +290,7 @@ router.get("/", async (req, res) => {
         as: "fields",
         attributes: ["id", "name"],
         where: fields_name
-          ? { name: { [Op.like]: `%${fields_name}%` } }
+          ? { name: { [Op.like]: `%${fields_name}%` } } 
           : undefined,
       },
       {
@@ -339,7 +338,6 @@ router.get("/", async (req, res) => {
         },
         {
           model: Branch,
-          as: "eduCenter",
           attributes: ["id", "name", "address", "phone"],
         },
         {
@@ -354,21 +352,6 @@ router.get("/", async (req, res) => {
       ],
     });
 
-    const educenters = await Promise.all(
-      eduCenters.rows.map(async (edu) => {
-        const likeCount = await Like.count({ where: { edu_id: edu.id } });
-        const comments = edu.comments || [];
-        const averagestar =
-          comments.length > 0
-            ? (
-                comments.reduce((sum, comment) => (sum += comment.star), 0) /
-                comments.length
-              ).toFixed(1)
-            : 0;
-        return { ...edu.toJSON(), likeCount, averagestar };
-      })
-    );
-
     loger.log(
       "info",
       "EduCenters fetched with pagination, sorting, and filtering by region ID, fields name, and subject name"
@@ -377,7 +360,7 @@ router.get("/", async (req, res) => {
       totalItems: eduCenters.count,
       totalPages: Math.ceil(eduCenters.count / limitNumber),
       currentPage: pageNumber,
-      data: educenters,
+      data: eduCenters.rows,
     });
   } catch (error) {
     console.error(error);

@@ -11,6 +11,7 @@ const options = {
     },
     servers: [
       {
+
         url: "http://asadapex.uz",
         description: "Global server",
       },
@@ -30,7 +31,7 @@ const options = {
       },
     ],
   },
-  apis: ["./routes/*.js"], // API lar joylashgan joyni ko‘rsating
+  apis: ["./routes/*.js"],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

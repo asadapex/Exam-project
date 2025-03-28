@@ -25,11 +25,6 @@
  *           type: integer
  *         description: Number of records to skip
  *       - in: query
- *         name: edu_id
- *         schema:
- *           type: string
- *         description: Filter by education ID
- *       - in: query
  *         name: branch_id
  *         schema:
  *           type: string
@@ -193,15 +188,12 @@ const {
 
 router.get("/my-registrations", authMiddleware, async (req, res) => {
   try {
-    let { limit, offset, edu_id, branch_id } = req.query;
+    let { limit, offset, branch_id } = req.query;
     limit = parseInt(limit) || 10;
     offset = (parseInt(offset) - 1) * limit || 0;
 
     let whereCondition = { user_id: req.user.id };
 
-    if (edu_id) {
-      whereCondition.edu_id = edu_id;
-    }
     if (branch_id) {
       whereCondition.branch_id = branch_id;
     }
@@ -262,6 +254,14 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
     limit = parseInt(limit) || 10;
     offset = (parseInt(offset) - 1) * limit || 0;
 
+    if (edu_id) {
+      const bazaEdu = await EduCenter.findByPk(edu_id);
+
+      if (!bazaEdu) {
+        return res.status(404).send({ message: "Education Center not found" });
+      }
+    }
+
     let whereCondition = {};
 
     if (branch_id) {
@@ -321,6 +321,12 @@ router.post("/", authMiddleware, async (req, res) => {
     const { error } = courseRegistrationValidator.validate(req.body);
     if (error) {
       return res.status(400).send({ message: error.details[0].message });
+    }
+
+    const bazaEdu = await EduCenter.findByPk(req.body.edu_id)
+
+    if(!bazaEdu){
+      return res.status(404).send({message: "Education cente not found"})
     }
 
     const bazaBranch = await Branch.findByPk(req.body.branch_id);
@@ -387,7 +393,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
       return res.status(404).send({ message: "Registration not found" });
     }
     await registration.destroy();
-    logger.log("Admin deleted registration");
+    logger.log("info", "Admin deleted registration");
     res.send(registration.dataValues);
   } catch (error) {
     console.log(error);

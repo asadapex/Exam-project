@@ -343,6 +343,12 @@ router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
       return res.status(404).send({ message: "User not found" });
     }
 
+    const bazaRegion = await Region.findByPk(req.body.region_id)
+
+    if(!bazaRegion){
+      return res.status(404).send({message: "Region not found"})
+    }
+
     await user.update(req.body);
     logger.info("Admin updated a user", { userId: req.params.id });
     res.send(user);

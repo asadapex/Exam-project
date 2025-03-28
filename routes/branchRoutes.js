@@ -362,6 +362,13 @@ router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
       if (!bazaReg) {
         return res.status(404).send({ message: "Region not found" });
       }
+
+      if(req.body.edu_id){
+        const bazaEdu = await EduCenter.findByPk(req.body.edu_id)
+        if(!bazaEdu){
+          return res.status(404).send({message: "Education center not found"})
+        }
+      }
     }
     if (req.user.role != "admin") {
       const one = await Branch.findOne({

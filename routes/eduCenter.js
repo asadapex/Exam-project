@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
-const {Op} = require("sequelize")
+const { Op } = require("sequelize");
 const loger = require("../logger");
 const { validEdu } = require("../validators/eduValidation");
 const {
@@ -123,11 +123,9 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
 
     const eduPhone = EduCenter.findOne({ where: { phone: value.phone } });
     if (eduPhone) {
-      return res
-        .status(400)
-        .send({
-          message: "This EduCenter already exists please change phone number",
-        });
+      return res.status(400).send({
+        message: "This EduCenter already exists please change phone number",
+      });
     }
 
     const newEduCenter = await EduCenter.create({
@@ -266,7 +264,7 @@ router.get("/", async (req, res) => {
 
     const whereClause = {};
     if (region_id) {
-      whereClause["region_id"] = region_id; 
+      whereClause["region_id"] = region_id;
     }
 
     const includeClause = [
@@ -290,7 +288,7 @@ router.get("/", async (req, res) => {
         as: "fields",
         attributes: ["id", "name"],
         where: fields_name
-          ? { name: { [Op.like]: `%${fields_name}%` } } 
+          ? { name: { [Op.like]: `%${fields_name}%` } }
           : undefined,
       },
       {
@@ -338,6 +336,7 @@ router.get("/", async (req, res) => {
         },
         {
           model: Branch,
+          as: "eduCenter",
           attributes: ["id", "name", "address", "phone"],
         },
         {
@@ -432,6 +431,11 @@ router.get("/:id", async (req, res) => {
         {
           model: Like,
           attributes: ["id"],
+        },
+        {
+          model: Branch,
+          as: "eduCenter",
+          attributes: ["id", "name", "address", "phone"],
         },
       ],
     });

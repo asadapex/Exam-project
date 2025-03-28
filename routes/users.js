@@ -204,10 +204,11 @@ const bcrypt = require("bcrypt");
 const userValidator = require("../validators/user.validator");
 const { Op } = require("sequelize");
 const { Region, User } = require("../associations");
+const { constants } = require("fs/promises");
 
 router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
   try {
-    let { limit, offset, createdAt, name, nameSort, email, phone } = req.query;
+    let { limit, offset, createdAt, name, nameSort, email, phone, region_id} = req.query;
     limit = parseInt(limit) || 10;
     offset = (parseInt(offset) - 1) * limit || 0;
 
@@ -241,6 +242,8 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
       order,
       include: { model: Region, attributes: ["name"] },
     });
+
+
 
     const totalPages = Math.ceil(totalCount / limit);
     const currentPage = offset / limit + 1;
@@ -343,9 +346,8 @@ router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
       return res.status(404).send({ message: "User not found" });
     }
 
-    const bazaRegion = await Region.findByPk(req.body.region_id)
-
-    if(!bazaRegion){
+    const BazaReg = await Region.findByPk(req.body.region_id)
+    if(!BazaReg){
       return res.status(404).send({message: "Region not found"})
     }
 
@@ -375,5 +377,59 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
     logger.error("Error in deleting user", { error });
   }
 });
+
+
+/**
+ * @swagger
+ * /users/add-admin:
+ *   patch:
+ *     summary: Promote a user to admin
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 example: 5
+ *     responses:
+ *       200:
+ *         description: User promoted to admin successfully
+ *       404:
+ *         description: User not found
+ *       403:
+ *         description: Unauthorized to perform this action
+ *       500:
+ *         description: Internal server error
+ */
+router.patch("/add-admin", roleMiddleware(["admin", "ceo"]), async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).send({ message: "User ID is required" });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    await user.update({ role: "admin" });
+
+    logger.info("User promoted to admin", { userId });
+    res.status(200).send({ message: "User promoted to admin successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Error in promoting user to admin" });
+    logger.error("Error in promoting user to admin", { error });
+  }
+});
+
 
 module.exports = router;

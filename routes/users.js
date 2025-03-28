@@ -197,6 +197,9 @@
  *       500:
  *         description: Internal server error
  */
+
+
+
 const router = require("express").Router();
 const logger = require("../logger");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
@@ -204,11 +207,10 @@ const bcrypt = require("bcrypt");
 const userValidator = require("../validators/user.validator");
 const { Op } = require("sequelize");
 const { Region, User } = require("../associations");
-const { constants } = require("fs/promises");
 
 router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
   try {
-    let { limit, offset, createdAt, name, nameSort, email, phone, region_id} = req.query;
+    let { limit, offset, createdAt, name, nameSort, email, phone } = req.query;
     limit = parseInt(limit) || 10;
     offset = (parseInt(offset) - 1) * limit || 0;
 
@@ -242,8 +244,6 @@ router.get("/all", roleMiddleware(["admin"]), async (req, res) => {
       order,
       include: { model: Region, attributes: ["name"] },
     });
-
-
 
     const totalPages = Math.ceil(totalCount / limit);
     const currentPage = offset / limit + 1;
@@ -346,11 +346,6 @@ router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
       return res.status(404).send({ message: "User not found" });
     }
 
-    const BazaReg = await Region.findByPk(req.body.region_id)
-    if(!BazaReg){
-      return res.status(404).send({message: "Region not found"})
-    }
-
     await user.update(req.body);
     logger.info("Admin updated a user", { userId: req.params.id });
     res.send(user);
@@ -382,7 +377,7 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
 /**
  * @swagger
  * /users/add-admin:
- *   patch:
+ *   post:
  *     summary: Promote a user to admin
  *     tags: [Users]
  *     security:
@@ -407,7 +402,8 @@ router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.patch("/add-admin", roleMiddleware(["admin", "ceo"]), async (req, res) => {
+router.post("/add-admin", roleMiddleware(["admin", "ceo"]), async (req, res) => {
+  
   try {
     const { userId } = req.body;
 
@@ -417,7 +413,7 @@ router.patch("/add-admin", roleMiddleware(["admin", "ceo"]), async (req, res) =>
 
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).send({ message: "User not found" });
+      return res.status(404).send({ message: "User not found " });
     }
 
     await user.update({ role: "admin" });
@@ -431,5 +427,80 @@ router.patch("/add-admin", roleMiddleware(["admin", "ceo"]), async (req, res) =>
   }
 });
 
+
+
+/**
+ * @swagger
+ * /users/create-admin:
+ *   post:
+ *     summary: Create a new admin user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Admin User
+ *               email:
+ *                 type: string
+ *                 example: admin@example.com
+ *               phone:
+ *                 type: string
+ *                 example: +998901234567
+ *               password:
+ *                 type: string
+ *                 example: admin123
+ *               role:
+ *                 type: string
+ *                 example: admin
+ *     responses:
+ *       201:
+ *         description: Admin created successfully
+ *       400:
+ *         description: Validation error or admin already exists
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/create-admin", roleMiddleware(["admin", "ceo"]), async (req, res) => {
+  try {
+    const { name, email, phone, password, role } = req.body;
+
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).send({ message: "All fields are required" });
+    }
+
+    const existingUserByEmail = await User.findOne({ where: { email } });
+    const existingUserByPhone = await User.findOne({ where: { phone } });
+
+    if (existingUserByEmail || existingUserByPhone) {
+      return res.status(400).send({ message: "Admin already exists" });
+    }
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    const newAdmin = await User.create({
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role,
+      region_id: 1,
+      status: "pending",
+      image: "No image"
+    });
+
+    logger.info("New admin created", { adminId: newAdmin.id });
+    res.status(201).send({ message: "Admin created successfully", admin: newAdmin });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Error in creating admin" });
+    logger.error("Error in creating admin", { error });
+  }
+});
 
 module.exports = router;

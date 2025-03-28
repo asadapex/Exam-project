@@ -12,7 +12,7 @@ const options = {
     servers: [
       {
 
-        url: "http://asadapex.uz",
+        url: "http://localhost:4000",
         description: "Global server",
       },
     ],

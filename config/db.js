@@ -8,9 +8,9 @@ const db = new Sequelize("n17", "root", "Asilbek_2007", {
 async function connectDb() {
   try {
     await db.authenticate();
-    // console.log("connected to db");
+    console.log("connected to db");
     // await db.sync({ force: true });
-    console.log("db synced");
+    // console.log("db synced");
   } catch (error) {
     console.log(error);
   }

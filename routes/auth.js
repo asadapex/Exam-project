@@ -29,7 +29,7 @@
  *         phone:
  *           type: string
  *           description: User's phone number
- *           example: +998901234567
+ *           example: "+998901234567"
  *         email:
  *           type: string
  *           format: email

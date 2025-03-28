@@ -482,9 +482,6 @@ router.get("/:id", async (req, res) => {
  *               phone:
  *                 type: string
  *                 example: "+998901234567"
- *               subjects:
- *                 type: array
- *                 example: [1, 2, 4]
  *
  *     responses:
  *       200:

@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:4000", // API server manzili
+        url: "http://3.126.125.113:4000", // API server manzili
         description: "Global server",
       },
     ],

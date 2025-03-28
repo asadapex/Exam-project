@@ -1,6 +1,6 @@
 const { Sequelize } = require("sequelize");
 
-const db = new Sequelize("asd", "root", "", {
+const db = new Sequelize("n17", "root", "123", {
   host: "localhost",
   dialect: "mysql",
 });
@@ -8,9 +8,9 @@ const db = new Sequelize("asd", "root", "", {
 async function connectDb() {
   try {
     await db.authenticate();
-    // console.log("connected to db");
+    console.log("connected to db");
     // await db.sync({ force: true });
-    console.log("db synced");
+    // console.log("db synced");
   } catch (error) {
     console.log(error);
   }

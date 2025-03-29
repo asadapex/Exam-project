@@ -48,4 +48,4 @@ app.use("/likes", likeRoutes);
 app.use(sessionRoutes);
 setupSwagger(app);
 
-app.listen(4000, () => console.log("server is running on 5000"));
+app.listen(5000, () => console.log("server is running on 5000"));

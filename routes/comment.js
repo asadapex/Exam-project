@@ -343,7 +343,7 @@ router.patch("/:id", roleMiddleware(["admin", "user"]), async (req, res) => {
         return res.status(400).send({ message: error.details[0].message });
       }
       await one.update(req.body);
-      res.send({ message: "Comment updated" });
+      return res.send({ message: "Comment updated" });
     }
     const one = await Comment.findByPk(req.params.id);
     if (!one) {
@@ -370,7 +370,7 @@ router.delete("/:id", roleMiddleware(["admin", "user"]), async (req, res) => {
         return res.status(403).send({ message: "Forbidden" });
       }
       await one.destroy(req.body);
-      res.send({ message: "Comment deleted" });
+      return res.send({ message: "Comment deleted" });
     }
     const one = await Comment.findByPk(req.params.id);
     if (!one) {

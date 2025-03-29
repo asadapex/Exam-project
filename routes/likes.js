@@ -121,7 +121,7 @@ route.delete("/:id", authMiddleware, async (req, res) => {
         return res.status(403).send({ message: "Forbidden" });
       }
       await like.destroy();
-      res.send(like.dataValues);
+      return res.send(like.dataValues);
     }
     const like = await Like.findByPk(req.params.id);
     if (!like) {

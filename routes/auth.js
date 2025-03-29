@@ -461,7 +461,7 @@ router.post("/resend-otp", async (req, res) => {
     const { email, phone } = req.body;
     const user_email = await User.findOne({ where: { email } });
     const user_phone = await User.findOne({ where: { phone } });
-    if (!user_email || user_phone) {
+    if (!user_email || !user_phone) {
       return res.status(404).send({ message: "Not found" });
     }
     const otp = totp.generate(email + "apex");

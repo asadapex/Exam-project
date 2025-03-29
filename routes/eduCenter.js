@@ -114,14 +114,15 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         )}`,
       });
     }
-    const eduName = EduCenter.findOne({ where: { name: value.name } });
+    const eduName = await EduCenter.findOne({ where: { name: value.name } });
+
     if (eduName) {
       return res
         .status(400)
         .send({ message: "This EduCenter already exists please change name" });
     }
 
-    const eduPhone = EduCenter.findOne({ where: { phone: value.phone } });
+    const eduPhone = await EduCenter.findOne({ where: { phone: value.phone } });
     if (eduPhone) {
       return res.status(400).send({
         message: "This EduCenter already exists please change phone number",

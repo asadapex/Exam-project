@@ -13,9 +13,9 @@ const router = Router();
  * @param {string} message - Custom error message
  */
 const handleError = (res, error, message) => {
-    console.error(error);
-    logger.log("error", message);
-    res.status(500).send({ message });
+  console.error(error);
+  logger.log("error", message);
+  res.status(500).send({ message });
 };
 
 /**
@@ -45,29 +45,32 @@ const handleError = (res, error, message) => {
  *       500:
  *         description: Server error
  */
-router.post("/", async (req, res) => {
-    try {
-        const { error, value } = validateRegion(req.body);
+router.post("/", roleMiddleware(["admin"]), async (req, res) => {
+  try {
+    const { error, value } = validateRegion(req.body);
 
-        if (error) {
-            logger.log("error", "Validation error in region creation");
-            return res.status(400).send({ message: "Validation error: " + error.details[0].message });
-        }
-
-        const existingRegion = await Region.findOne({ where: { name: value.name } });
-        if (existingRegion) {
-            logger.log("info", "Region already exists");
-            return res.status(400).send({ message: "Region already exists" });
-        }
-
-        const newRegion = await Region.create(value);
-        logger.log("info", "Region created successfully");
-        res.status(200).send(newRegion);
-    } catch (error) {
-        handleError(res, error, "Error creating region");
+    if (error) {
+      logger.log("error", "Validation error in region creation");
+      return res
+        .status(400)
+        .send({ message: "Validation error: " + error.details[0].message });
     }
-});
 
+    const existingRegion = await Region.findOne({
+      where: { name: value.name },
+    });
+    if (existingRegion) {
+      logger.log("info", "Region already exists");
+      return res.status(400).send({ message: "Region already exists" });
+    }
+
+    const newRegion = await Region.create(value);
+    logger.log("info", "Region created successfully");
+    res.status(200).send(newRegion);
+  } catch (error) {
+    handleError(res, error, "Error creating region");
+  }
+});
 
 /**
  * @swagger
@@ -131,30 +134,33 @@ router.post("/", async (req, res) => {
  */
 
 router.get("/", async (req, res) => {
-    try {
-        const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 10;
-        const name = req.query.name || "";
-        const sort = req.query.sort || "id"; 
-        const order = req.query.order === "desc" ? "DESC" : "ASC"; 
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const name = req.query.name || "";
+    const sort = req.query.sort || "id";
+    const order = req.query.order === "desc" ? "DESC" : "ASC";
 
-        const regions = await Region.findAndCountAll({
-            where: name ? { name: { [Op.like]: `%${name}%` } } : undefined,
-            order: [[sort, order]], 
-            offset: (page - 1) * limit,
-            limit,
-        });
+    const regions = await Region.findAndCountAll({
+      where: name ? { name: { [Op.like]: `%${name}%` } } : undefined,
+      order: [[sort, order]],
+      offset: (page - 1) * limit,
+      limit,
+    });
 
-        logger.log("info", "Regions fetched with pagination, optional name filter, and sorting");
-        res.status(200).send({
-            totalItems: regions.count,
-            totalPages: Math.ceil(regions.count / limit),
-            currentPage: page,
-            data: regions.rows,
-        });
-    } catch (error) {
-        handleError(res, error, "Error fetching regions");
-    }
+    logger.log(
+      "info",
+      "Regions fetched with pagination, optional name filter, and sorting"
+    );
+    res.status(200).send({
+      totalItems: regions.count,
+      totalPages: Math.ceil(regions.count / limit),
+      currentPage: page,
+      data: regions.rows,
+    });
+  } catch (error) {
+    handleError(res, error, "Error fetching regions");
+  }
 });
 /**
  * @swagger
@@ -179,20 +185,20 @@ router.get("/", async (req, res) => {
  *         description: Server error
  */
 router.get("/byId/:id", async (req, res) => {
-    try {
-        const { id } = req.params;
-        const region = await Region.findByPk(id);
+  try {
+    const { id } = req.params;
+    const region = await Region.findByPk(id);
 
-        if (!region) {
-            logger.log("info", `Region not found with ID: ${id}`);
-            return res.status(404).send({ message: "Region not found" });
-        }
-
-        logger.log("info", "Region fetched by ID");
-        res.status(200).send(region);
-    } catch (error) {
-        handleError(res, error, "Error fetching region by ID");
+    if (!region) {
+      logger.log("info", `Region not found with ID: ${id}`);
+      return res.status(404).send({ message: "Region not found" });
     }
+
+    logger.log("info", "Region fetched by ID");
+    res.status(200).send(region);
+  } catch (error) {
+    handleError(res, error, "Error fetching region by ID");
+  }
 });
 
 /**
@@ -230,28 +236,30 @@ router.get("/byId/:id", async (req, res) => {
  *         description: Server error
  */
 router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { error, value } = validateRegion(req.body);
+  try {
+    const { id } = req.params;
+    const { error, value } = validateRegion(req.body);
 
-        if (error) {
-            logger.log("error", "Validation error in region update");
-            return res.status(400).send({ message: "Validation error: " + error.details[0].message });
-        }
-
-        const region = await Region.findByPk(id);
-
-        if (!region) {
-            logger.log("info", `Region not found with ID: ${id}`);
-            return res.status(404).send({ message: "Region not found" });
-        }
-
-        await region.update(value);
-        logger.log("info", `Region updated successfully: ${id}`);
-        res.status(200).send(region);
-    } catch (error) {
-        handleError(res, error, "Error updating region");
+    if (error) {
+      logger.log("error", "Validation error in region update");
+      return res
+        .status(400)
+        .send({ message: "Validation error: " + error.details[0].message });
     }
+
+    const region = await Region.findByPk(id);
+
+    if (!region) {
+      logger.log("info", `Region not found with ID: ${id}`);
+      return res.status(404).send({ message: "Region not found" });
+    }
+
+    await region.update(value);
+    logger.log("info", `Region updated successfully: ${id}`);
+    res.status(200).send(region);
+  } catch (error) {
+    handleError(res, error, "Error updating region");
+  }
 });
 
 /**
@@ -279,21 +287,21 @@ router.patch("/:id", roleMiddleware(["admin"]), async (req, res) => {
  *         description: Server error
  */
 router.delete("/:id", roleMiddleware(["admin"]), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const region = await Region.findByPk(id);
+  try {
+    const { id } = req.params;
+    const region = await Region.findByPk(id);
 
-        if (!region) {
-            logger.log("info", `Region not found with ID: ${id}`);
-            return res.status(404).send({ message: "Region not found" });
-        }
-
-        await region.destroy();
-        logger.log("info", `Region deleted successfully: ${id}`);
-        res.status(200).send({ message: "Region deleted successfully" });
-    } catch (error) {
-        handleError(res, error, "Error deleting region");
+    if (!region) {
+      logger.log("info", `Region not found with ID: ${id}`);
+      return res.status(404).send({ message: "Region not found" });
     }
+
+    await region.destroy();
+    logger.log("info", `Region deleted successfully: ${id}`);
+    res.status(200).send({ message: "Region deleted successfully" });
+  } catch (error) {
+    handleError(res, error, "Error deleting region");
+  }
 });
 
 module.exports = router;

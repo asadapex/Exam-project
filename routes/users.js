@@ -491,7 +491,7 @@ router.post(
         password: hashedPassword,
         role,
         region_id: 1,
-        status: "pending",
+        status: "active",
         image: "No image",
       });
 

@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
 const { Op } = require("sequelize");
 const loger = require("../logger");
-const { validEdu } = require("../validators/eduValidation");
+const { validEdu, validEduUpdate } = require("../validators/eduValidation");
 const {
   Region,
   User,
@@ -499,7 +499,7 @@ router.get("/:id", async (req, res) => {
 router.patch("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
   const { id } = req.params;
   try {
-    const { error, value } = validEdu(req.body);
+    const { error, value } = validEduUpdate(req.body);
     if (req.user.role != "admin") {
       const one = await EduCenter.findOne({
         where: { id: req.params.id, user_id: req.user.id },
@@ -521,7 +521,7 @@ router.patch("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
 
       await eduCenter.update(value);
       loger.log("info", `EduCenter updated: ${id}`);
-      res.status(200).send(eduCenter);
+      return res.status(200).send(eduCenter);
     }
 
     const eduCenter = await EduCenter.findByPk(id);
@@ -570,7 +570,7 @@ router.delete("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         where: { id: req.params.id, user_id: req.user.id },
       });
       if (!one) {
-        loger.log("info", `This edue center not ${value.name} ceo`);
+        loger.log("info", `This edue center not ceo`);
         return res.status(403).send({ message: "This not your edu center" });
       }
 
@@ -585,7 +585,9 @@ router.delete("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
       });
       loger.log("info", `EduCenter deleted: ${id}`);
       await eduCenter.destroy();
-      res.status(200).send({ message: "EduCenter deleted successfully" });
+      return res
+        .status(200)
+        .send({ message: "EduCenter deleted successfully" });
     }
     const eduCenter = await EduCenter.findByPk(id);
     if (!eduCenter) {

@@ -363,10 +363,12 @@ router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
         return res.status(404).send({ message: "Region not found" });
       }
 
-      if(req.body.edu_id){
-        const bazaEdu = await EduCenter.findByPk(req.body.edu_id)
-        if(!bazaEdu){
-          return res.status(404).send({message: "Education center not found"})
+      if (req.body.edu_id) {
+        const bazaEdu = await EduCenter.findByPk(req.body.edu_id);
+        if (!bazaEdu) {
+          return res
+            .status(404)
+            .send({ message: "Education center not found" });
         }
       }
     }
@@ -382,7 +384,7 @@ router.patch("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
         return res.status(400).send({ message: error.details[0].message });
       }
       await one.update(req.body);
-      res.send(one);
+      return res.send(one);
     }
     const one = await Branch.findByPk(req.params.id);
     if (!one) {
@@ -405,7 +407,7 @@ router.delete("/:id", roleMiddleware(["admin", "ceo"]), async (req, res) => {
         return res.status(403).send({ message: "Forbidden" });
       }
       await one.destroy();
-      res.send({ message: "Branch deleted" });
+      return res.send({ message: "Branch deleted" });
     }
     const one = await Branch.findByPk(req.params.id);
     if (!one) {

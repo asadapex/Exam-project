@@ -295,7 +295,7 @@ router.patch("/:id", authMiddleware, async (req, res) => {
       }
       await resource.update(req.body);
       logger.info("User updated resource");
-      res.send(resource);
+      return res.send(resource);
     } else if (req.user.role === "admin" || req.user.role === "super-admin") {
       const resource = await Resource.findByPk(req.params.id);
       if (!resource) {
@@ -331,7 +331,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
       }
       await resource.destroy();
       logger.info("User deleted resource");
-      res.send(resource.dataValues);
+      return res.send(resource.dataValues);
     } else if (req.user.role === "admin" || req.user.role === "super-admin") {
       const resource = await Resource.findByPk(req.params.id);
       if (!resource) {

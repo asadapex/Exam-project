@@ -1,5 +1,8 @@
 const { Router } = require("express");
-const { roleMiddleware } = require("../middlewares/auth-role.middlewars");
+const {
+  roleMiddleware,
+  authMiddleware,
+} = require("../middlewares/auth-role.middlewars");
 const { Op } = require("sequelize");
 const loger = require("../logger");
 const { validEdu, validEduUpdate } = require("../validators/eduValidation");
@@ -158,6 +161,204 @@ router.post("/", roleMiddleware(["ceo", "admin"]), async (req, res) => {
     res.status(500).send({ message: "Server error" });
   }
 });
+
+/**
+ * @swagger
+ * /eduCenter/my-educenters:
+ *   get:
+ *     summary: Foydalanuvchining o‘ziga tegishli ta’lim markazlarini olish
+ *     tags:
+ *       - EduCenter
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Sahifa raqami (pagination)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Bir sahifada nechta element chiqarish kerakligi
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Tartib bo‘yicha saralash (yaratilgan sana asosida)
+ *       - in: query
+ *         name: fields_name
+ *         schema:
+ *           type: string
+ *         description: Ma’lum yo‘nalish (field) bo‘yicha qidirish
+ *       - in: query
+ *         name: region_id
+ *         schema:
+ *           type: integer
+ *         description: Hudud bo‘yicha qidirish (Region ID)
+ *       - in: query
+ *         name: subjects
+ *         schema:
+ *           type: string
+ *         description: Fanlar bo‘yicha qidirish (Subject Name)
+ *     responses:
+ *       200:
+ *         description: Foydalanuvchining ta’lim markazlari ro‘yxati
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalItems:
+ *                   type: integer
+ *                   description: Jami topilgan ta’lim markazlari soni
+ *                 totalPages:
+ *                   type: integer
+ *                   description: Umumiy sahifalar soni
+ *                 currentPage:
+ *                   type: integer
+ *                   description: Joriy sahifa raqami
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                       region:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           name:
+ *                             type: string
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           name:
+ *                             type: string
+ *                       subjects:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                             name:
+ *                               type: string
+ *       500:
+ *         description: Server xatosi
+ */
+router.get("/my-educenters", authMiddleware, async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      sort = "asc",
+      fields_name,
+      region_id,
+      subjects,
+    } = req.query;
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const whereClause = { user_id: req.user.id };
+    if (region_id) {
+      whereClause["region_id"] = region_id;
+    }
+
+    const includeClause = [
+      {
+        model: User,
+        as: "user",
+        attributes: ["id", "name"],
+      },
+      {
+        model: Region,
+        as: "region",
+        attributes: ["id", "name"],
+      },
+      {
+        model: Comment,
+        as: "comments",
+        attributes: ["id", "text", "star"],
+      },
+      {
+        model: Fields,
+        as: "fields",
+        attributes: ["id", "name"],
+        where: fields_name
+          ? { name: { [Op.like]: `%${fields_name}%` } }
+          : undefined,
+      },
+      {
+        model: Branch,
+        as: "eduCenter",
+        attributes: ["id", "name", "address", "phone"],
+      },
+      {
+        model: Subjet,
+        as: "subjects",
+        attributes: ["id", "name"],
+        where: subjects ? { name: { [Op.like]: `%${subjects}%` } } : undefined,
+      },
+      {
+        model: Like,
+        attributes: ["id"],
+      },
+    ];
+
+    const eduCenters = await EduCenter.findAndCountAll({
+      where: whereClause,
+      offset: (pageNumber - 1) * limitNumber,
+      limit: limitNumber,
+      order: [["createdAt", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
+      include: includeClause,
+    });
+
+    // Sharhlarning o'rtacha bahosini hisoblash va like count qo'shish
+    const data = eduCenters.rows.map((eduCenter) => {
+      const comments = eduCenter.comments || [];
+      const likeCount = eduCenter.Likes ? eduCenter.Likes.length : 0;
+
+      const averageStar =
+        comments.length > 0
+          ? comments.reduce((acc, comment) => acc + comment.star, 0) /
+            comments.length
+          : 0;
+
+      return {
+        ...eduCenter.toJSON(),
+        averageStar: parseFloat(averageStar.toFixed(1)), // O‘rtacha yulduz reytingini 1 kasr o‘rindagi raqam bilan chiqarish
+        likeCount,
+      };
+    });
+
+    loger.log(
+      "info",
+      "EduCenters fetched with pagination, sorting, and filtering by region ID, fields name, and subject name"
+    );
+    res.status(200).send({
+      totalItems: eduCenters.count,
+      totalPages: Math.ceil(eduCenters.count / limitNumber),
+      currentPage: pageNumber,
+      data,
+    });
+  } catch (error) {
+    console.error(error);
+    loger.log("error", "Error fetching EduCenters");
+    res.status(500).send({ message: "Server error" });
+  }
+});
+
 /**
  * @swagger
  * /eduCenter:
@@ -294,6 +495,7 @@ router.get("/", async (req, res) => {
       },
       {
         model: Branch,
+        as: "eduCenter",
         attributes: ["id", "name", "address", "phone"],
       },
       {
@@ -304,6 +506,10 @@ router.get("/", async (req, res) => {
           ? { name: { [Op.like]: `%${subjects}%` } } // Filter by subject name
           : undefined,
       },
+      {
+        model: Like,
+        attributes: ["id"],
+      },
     ];
 
     const eduCenters = await EduCenter.findAndCountAll({
@@ -311,45 +517,25 @@ router.get("/", async (req, res) => {
       offset: (pageNumber - 1) * limitNumber,
       limit: limitNumber,
       order: [["createdAt", sort.toLowerCase() === "desc" ? "DESC" : "ASC"]],
-
       include: includeClause,
+    });
 
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Region,
-          as: "region",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Comment,
-          as: "comments",
-          attributes: ["id", "text", "star"],
-        },
-        {
-          model: Fields,
-          as: "fields",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Branch,
-          as: "eduCenter",
-          attributes: ["id", "name", "address", "phone"],
-        },
-        {
-          model: Subjet,
-          as: "subjects",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Like,
-          attributes: ["id"],
-        },
-      ],
+    // Sharhlarning o'rtacha bahosini hisoblash va like count qo'shish
+    const data = eduCenters.rows.map((eduCenter) => {
+      const comments = eduCenter.comments || [];
+      const likeCount = eduCenter.Likes ? eduCenter.Likes.length : 0;
+
+      const averageStar =
+        comments.length > 0
+          ? comments.reduce((acc, comment) => acc + comment.star, 0) /
+            comments.length
+          : 0;
+
+      return {
+        ...eduCenter.toJSON(),
+        averageStar: parseFloat(averageStar.toFixed(1)), // O‘rtacha yulduz reytingini 1 kasr o‘rindagi raqam bilan chiqarish
+        likeCount,
+      };
     });
 
     loger.log(
@@ -360,7 +546,7 @@ router.get("/", async (req, res) => {
       totalItems: eduCenters.count,
       totalPages: Math.ceil(eduCenters.count / limitNumber),
       currentPage: pageNumber,
-      data: eduCenters.rows,
+      data,
     });
   } catch (error) {
     console.error(error);

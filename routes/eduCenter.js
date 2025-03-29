@@ -698,7 +698,12 @@ router.patch("/:id", roleMiddleware(["ceo", "admin"]), async (req, res) => {
         loger.log("error", "Validation error in update EduCenter");
         return res.status(400).send({ message: error.details[0].message });
       }
-
+      if (req.body.region_id) {
+        const reg = await Region.findByPk(req.body.region_id);
+        if (!reg) {
+          return res.status(404).send({ message: "Region not found" });
+        }
+      }
       const eduCenter = await EduCenter.findByPk(id);
       if (!eduCenter) {
         loger.log("info", `EduCenter with ID ${id} not found`);

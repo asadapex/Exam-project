@@ -494,7 +494,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).send({ message: "Password is incorrect" });
     }
     if (user.status == "pending") {
-      return res.send({
+      return res.status(400).send({
         message: "Your account is not verified please verify",
       });
     }

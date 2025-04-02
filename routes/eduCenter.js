@@ -289,7 +289,7 @@ router.get("/my-educenters", authMiddleware, async (req, res) => {
       {
         model: Comment,
         as: "comments",
-        attributes: ["id", "text", "star"],
+        attributes: ["id", "text", "star", "user_id"],
       },
       {
         model: Fields,

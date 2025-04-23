@@ -371,225 +371,233 @@ const deviceDetector = new DeviceDetector();
 const router = require("express").Router();
 
 function genToken(user) {
-  const token = jwt.sign(
-    { id: user.id, role: user.role, status: user.status },
-    "apex1",
-    { expiresIn: "40m" }
-  );
-  return token;
+    const token = jwt.sign(
+        { id: user.id, role: user.role, status: user.status },
+        "apex1",
+        { expiresIn: "40m" }
+    );
+    return token;
 }
 
 function genRefreshToken(user) {
-  const token = jwt.sign({ id: user.id }, "apex2", { expiresIn: "14d" });
-  return token;
+    const token = jwt.sign({ id: user.id }, "apex2", { expiresIn: "14d" });
+    return token;
 }
 
 router.post("/register", async (req, res) => {
-  try {
-    const { error } = userValidator.validate(req.body);
-    if (error)
-      return res.status(400).send({ message: error.details[0].message });
+    try {
+        const { error } = userValidator.validate(req.body);
+        if (error)
+            return res.status(400).send({ message: error.details[0].message });
 
-    const { email, password, phone, name, region_id, ...rest } = req.body;
-    const user_email = await User.findOne({ where: { email } });
-    const user_phone = await User.findOne({ where: { phone } });
-    const regionBaza = await Region.findOne({ where: { id: region_id } });
-    if (!regionBaza) {
-      return res.status(404).send({ message: "Region not found" });
+        const { email, password, phone, name, region_id, ...rest } = req.body;
+        const user_email = await User.findOne({ where: { email } });
+        const user_phone = await User.findOne({ where: { phone } });
+        const regionBaza = await Region.findOne({ where: { id: region_id } });
+        if (!regionBaza) {
+            return res.status(404).send({ message: "Region not found" });
+        }
+
+        if (user_email || user_phone) {
+            return res.status(400).send({ message: "User already exists" });
+        }
+        const otp = totp.generate(email + "apex");
+        const hash = bcrypt.hashSync(password, 10);
+        const newUser = await User.create({
+            email,
+            password: hash,
+            status: "pending",
+            phone: phone,
+            name,
+            region_id: regionBaza.id,
+            ...rest,
+        });
+        console.log(otp);
+        // const err = await sendSMS(phone, otp);
+        // if (err)
+        //   return res
+        //     .status(400)
+        //     .send({
+        //       message: "Error to send SMS code please enter a valid phone number",
+        //     });
+
+
+
+        // sendEmail(email, name, otp);
+
+        
+        logger.log("info", `New user registered - ${email}`);
+        res.send({ message: "Otp sended to your email" });
+    } catch (error) {
+        console.log(error);
+        logger.error("Error to register user");
+        res.status(500).send({ message: "Something went wrong" });
     }
-
-    if (user_email || user_phone) {
-      return res.status(400).send({ message: "User already exists" });
-    }
-    const otp = totp.generate(email + "apex");
-    const hash = bcrypt.hashSync(password, 10);
-    const newUser = await User.create({
-      email,
-      password: hash,
-      status: "pending",
-      phone: phone,
-      name,
-      region_id: regionBaza.id,
-      ...rest,
-    });
-    console.log(otp);
-    // const err = await sendSMS(phone, otp);
-    // if (err)
-    //   return res
-    //     .status(400)
-    //     .send({
-    //       message: "Error to send SMS code please enter a valid phone number",
-    //     });
-    sendEmail(email, name, otp);
-
-    logger.log("info", `New user registered - ${email}`);
-    res.send({ message: "Otp sended to your email" });
-  } catch (error) {
-    console.log(error);
-    logger.error("Error to register user");
-    res.status(500).send({ message: "Something went wrong" });
-  }
 });
 
 router.post("/verify", async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).send({ message: "User not found" });
-    }
-    const match = totp.verify({ token: otp, secret: email + "apex" });
-    if (!match) {
-      return res.status(400).send({ message: "Code is not valid or expired" });
-    }
+    try {
+        const { email, otp } = req.body;
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+        const match = totp.verify({ token: otp, secret: email + "apex" });
+        if (!match) {
+            return res
+                .status(400)
+                .send({ message: "Code is not valid or expired" });
+        }
 
-    await user.update({
-      status: "active",
-    });
+        await user.update({
+            status: "active",
+        });
 
-    logger.log("info", `User verified - ${user}`);
-    res.send({ message: "Verified" });
-  } catch (error) {
-    console.log(error);
-    logger.error("Error to verify user");
-    res.status(500).send({ message: "Something went wrong" });
-  }
+        logger.log("info", `User verified - ${user}`);
+        res.send({ message: "Verified" });
+    } catch (error) {
+        console.log(error);
+        logger.error("Error to verify user");
+        res.status(500).send({ message: "Something went wrong" });
+    }
 });
 
 router.post("/resend-otp", async (req, res) => {
-  try {
-    const { email, phone } = req.body;
-    const user_email = await User.findOne({ where: { email } });
-    const user_phone = await User.findOne({ where: { phone } });
-    if (!user_email || !user_phone) {
-      return res.status(404).send({ message: "Not found" });
+    try {
+        const { email, phone } = req.body;
+        const user_email = await User.findOne({ where: { email } });
+        const user_phone = await User.findOne({ where: { phone } });
+        if (!user_email || !user_phone) {
+            return res.status(404).send({ message: "Not found" });
+        }
+        const otp = totp.generate(email + "apex");
+        console.log(otp);
+        // const err = await sendSMS(phone, otp);
+        // if (err)
+        //   return res
+        //     .status(400)
+        //     .send({
+        //       message: "Error to send SMS code please enter a valid phone number",
+        //     });
+        sendEmail(email, "New User", otp);
+        res.send({ message: "Otp sended to your email" });
+    } catch (error) {
+        console.log(error);
+        logger.error("Error to resend otp to user");
+        res.status(500).send({ message: "Something went wrong" });
     }
-    const otp = totp.generate(email + "apex");
-    console.log(otp);
-    // const err = await sendSMS(phone, otp);
-    // if (err)
-    //   return res
-    //     .status(400)
-    //     .send({
-    //       message: "Error to send SMS code please enter a valid phone number",
-    //     });
-    sendEmail(email, "New User", otp);
-    res.send({ message: "Otp sended to your email" });
-  } catch (error) {
-    console.log(error);
-    logger.error("Error to resend otp to user");
-    res.status(500).send({ message: "Something went wrong" });
-  }
 });
 
 router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(400).send({ message: "User not found" });
-    }
-    const match = bcrypt.compareSync(password, user.password);
-    if (!match) {
-      return res.status(401).send({ message: "Password is incorrect" });
-    }
-    if (user.status == "pending") {
-      return res.status(400).send({
-        message: "Your account is not verified please verify",
-      });
-    }
-    const access_token = genToken(user);
-    const refresh_token = genRefreshToken(user.email);
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(400).send({ message: "User not found" });
+        }
+        const match = bcrypt.compareSync(password, user.password);
+        if (!match) {
+            return res.status(401).send({ message: "Password is incorrect" });
+        }
+        if (user.status == "pending") {
+            return res.status(400).send({
+                message: "Your account is not verified please verify",
+            });
+        }
+        const access_token = genToken(user);
+        const refresh_token = genRefreshToken(user.email);
 
-    logger.log("info", `User logged in - ${user}`);
+        logger.log("info", `User logged in - ${user}`);
 
-    const device = deviceDetector.parse(req.headers["user-agent"]);
-    console.log(device);
+        const device = deviceDetector.parse(req.headers["user-agent"]);
+        console.log(device);
 
-    const session = await Session.findOne({
-      where: { user_id: user.id, ip: req.ip },
-    });
-    if (!session) {
-      await Session.create({
-        user_id: user.id,
-        ip: req.ip,
-        device:
-          device.os.name +
-          " " +
-          device.os.version +
-          " " +
-          device.device.type +
-          " " +
-          device.device.name +
-          " " +
-          device.device.brand,
-      });
+        const session = await Session.findOne({
+            where: { user_id: user.id, ip: req.ip },
+        });
+        if (!session) {
+            await Session.create({
+                user_id: user.id,
+                ip: req.ip,
+                device:
+                    device.os.name +
+                    " " +
+                    device.os.version +
+                    " " +
+                    device.device.type +
+                    " " +
+                    device.device.name +
+                    " " +
+                    device.device.brand,
+            });
+        }
+        res.send({ refresh_token, access_token });
+    } catch (error) {
+        console.log(error);
+        logger.error("Error to log in");
+        res.status(500).send({ message: "Something went wrong" });
     }
-    res.send({ refresh_token, access_token });
-  } catch (error) {
-    console.log(error);
-    logger.error("Error to log in");
-    res.status(500).send({ message: "Something went wrong" });
-  }
 });
 
 router.post("/access-token", async (req, res) => {
-  try {
-    const { refresh_token } = req.body;
-    const user = jwt.verify(refresh_token, "apex2");
+    try {
+        const { refresh_token } = req.body;
+        const user = jwt.verify(refresh_token, "apex2");
 
-    if (!user)
-      return res.status(401).send({ message: "Invalid refresh token" });
+        if (!user)
+            return res.status(401).send({ message: "Invalid refresh token" });
 
-    logger.log("info", `User got new access_token - ${user.email}`);
-    const access_token = genToken(user);
-    res.send({ access_token });
-  } catch (error) {
-    console.log(error);
-    logger.error("Error to get new access_token");
-    res.status(500).send({ message: "Something went wrong" });
-  }
+        logger.log("info", `User got new access_token - ${user.email}`);
+        const access_token = genToken(user);
+        res.send({ access_token });
+    } catch (error) {
+        console.log(error);
+        logger.error("Error to get new access_token");
+        res.status(500).send({ message: "Something went wrong" });
+    }
 });
 
 router.patch("/reset-password", authMiddleware, async (req, res) => {
-  try {
-    const { error } = resetPasswordValidator.validate(req.body);
-    if (error) {
-      return res.status(400).send({ message: error.details[0].message });
+    try {
+        const { error } = resetPasswordValidator.validate(req.body);
+        if (error) {
+            return res.status(400).send({ message: error.details[0].message });
+        }
+        const { oldPassword, newPassword } = req.body;
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+        const match = bcrypt.compareSync(oldPassword, user.password);
+        if (!match) {
+            return res
+                .status(401)
+                .send({ message: "Old password is incorrect" });
+        }
+        const hash = bcrypt.hashSync(newPassword, 10);
+        await user.update({ password: hash });
+        res.send({ message: "Password successfully reset" });
+    } catch (error) {
+        console.log(error);
+        logger.error("Error to reset user's password:");
+        res.status(500).send({ message: "Something went wrong" });
     }
-    const { oldPassword, newPassword } = req.body;
-    const user = await User.findByPk(req.user.id);
-    if (!user) {
-      return res.status(404).send({ message: "User not found" });
-    }
-    const match = bcrypt.compareSync(oldPassword, user.password);
-    if (!match) {
-      return res.status(401).send({ message: "Old password is incorrect" });
-    }
-    const hash = bcrypt.hashSync(newPassword, 10);
-    await user.update({ password: hash });
-    res.send({ message: "Password successfully reset" });
-  } catch (error) {
-    console.log(error);
-    logger.error("Error to reset user's password:");
-    res.status(500).send({ message: "Something went wrong" });
-  }
 });
 
 router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await User.findByPk(userId, {
-      include: { model: Region, attributes: ["name"] },
-    });
-    if (!user) {
-      return res.status(404).send({ message: "User not found" });
+    try {
+        const userId = req.user.id;
+        const user = await User.findByPk(userId, {
+            include: { model: Region, attributes: ["name"] },
+        });
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+        res.send(user);
+    } catch (error) {
+        logger.error("Error retrieving user information:", error);
+        res.status(500).send({ message: "Internal server error" });
     }
-    res.send(user);
-  } catch (error) {
-    logger.error("Error retrieving user information:", error);
-    res.status(500).send({ message: "Internal server error" });
-  }
 });
 
 module.exports = router;

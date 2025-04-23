@@ -204,7 +204,7 @@ router.post(
 
 router.get("/:filename", (req, res) => {
   try {
-    const filePath = path.join(__dirname, "../uploads", req.params.filename);
+    const filePath = path.join(__dirname, "../upload", req.params.filename);
     res.sendFile(filePath);
   } catch (error) {
     console.log(error);
